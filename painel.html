@@ -423,7 +423,7 @@
     return `<div class="box"><h3>Produtos · ${itens.length}${pend ? ` <span class="muted" style="text-transform:none;letter-spacing:0">(${pend} a decidir)</span>` : ''}</h3>
       ${itens.map((i) => `<div class="item-dec" data-item="${i.id}">
         <div class="id-top">
-          <div class="ir-prod"><b class="mono">${esc(i.sku || 'Sem código')}</b> ${esc(i.produto || '')}${i.quantidade != null ? ` <span class="muted">· ${esc(i.quantidade)} un.</span>` : ''}</div>
+          <div class="ir-prod"><b class="mono">${esc(i.sku || 'Sem código')}</b> ${esc(i.produto || '')}${i.quantidade != null ? ` <span class="muted">· ${esc(i.quantidade)} un.</span>` : ''}${i.motivo ? `<span class="ir-mot">${esc(i.motivo)}</span>` : ''}</div>
           <span class="dec dec-${esc(i.decisao)}">${esc(decisaoTexto(i))}</span>
         </div>
         ${i.justificativa ? `<div class="ir-just">${esc(i.justificativa)}</div>` : ''}
@@ -604,11 +604,11 @@
 
   // ---------- exportação ----------
   $('btn-csv').addEventListener('click', () => {
-    const cols = ['Protocolo', 'Tipo', 'Motivo', 'Status', 'Prioridade', 'Loja', 'CNPJ', 'Cidade', 'Contato', 'WhatsApp', 'Nota/Pedido', 'SKU', 'Produto', 'Quantidade', 'Decisão', 'Qtd. aceita', 'Justificativa', 'Descrição', 'Responsável', 'Aberto em', 'Prazo', 'Atualizado em', 'Atrasado'];
+    const cols = ['Protocolo', 'Tipo', 'Motivo', 'Status', 'Prioridade', 'Loja', 'CNPJ', 'Cidade', 'Contato', 'WhatsApp', 'Nota/Pedido', 'SKU', 'Produto', 'Quantidade', 'Motivo do produto', 'Decisão', 'Qtd. aceita', 'Justificativa', 'Descrição', 'Responsável', 'Aberto em', 'Prazo', 'Atualizado em', 'Atrasado'];
     const cel = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
     // Uma linha por produto, para dar para filtrar e somar as devoluções aceitas na planilha.
     const linhas = filtrados().flatMap((t) => ((t.itens || []).length ? t.itens : [{}]).map((i) => [t.protocolo, TIPOS[t.tipo]?.rot, t.motivo, STATUS[t.status], PRIORIDADES[t.prioridade],
-      t.loja_nome, t.loja_cnpj, t.loja_cidade, t.loja_contato, foneBonito(t.loja_whatsapp), t.nf, i.sku, i.produto, i.quantidade,
+      t.loja_nome, t.loja_cnpj, t.loja_cidade, t.loja_contato, foneBonito(t.loja_whatsapp), t.nf, i.sku, i.produto, i.quantidade, i.motivo,
       i.decisao ? DECISOES[i.decisao] : '', i.qtd_aceita, i.justificativa, t.descricao, t.responsavel ? nome(t.responsavel) : '', quando(t.criado_em),
       quando(prazoDe(t).toISOString()), quando(t.atualizado_em), prazoInfo(t).atrasado ? 'Sim' : 'Não'].map(cel).join(';')));
     const blob = new Blob(['﻿' + cols.map(cel).join(';') + '\n' + linhas.join('\n')], { type: 'text/csv;charset=utf-8' });

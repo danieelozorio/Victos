@@ -16,6 +16,9 @@
   };
   const ABERTOS = ['novo', 'analise', 'aguardando', 'aprovado'];
   const PRIORIDADES = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' };
+  // Motivo de cada produto do chamado (um SKU pode estar em falta e outro com falta de peso).
+  const MOTIVOS_ITEM = ['Falta (quantidade menor)', 'Falta de peso', 'Qualidade', 'Avaria / quebrado', 'Embalagem danificada',
+    'Validade vencida ou próxima', 'Produto errado', 'Produto com defeito', 'Sobra (veio a mais)', 'Outro'];
   const DECISOES = { pendente: 'Em análise', aceito: 'Aceito', recusado: 'Recusado' };
   // Fotos e vídeos aceitos: tipo do arquivo -> extensão usada no armazenamento.
   const MIME_EXT = {
@@ -113,5 +116,5 @@
     return '<div class="banner"><div><b>Site ainda não conectado ao banco de dados.</b> Preencha o arquivo <span class="mono">config.js</span> com a URL e a chave do Supabase (veja o passo a passo no README).</div></div>';
   }
 
-  window.SAC = { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, MIME_EXT, MAX_ARQUIVO, ehVideo, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, dur, quando, waNumero, foneBonito, toast, copiar, cliente, mensagemErro, configPendente };
+  window.SAC = { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, MOTIVOS_ITEM, MIME_EXT, MAX_ARQUIVO, ehVideo, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, dur, quando, waNumero, foneBonito, toast, copiar, cliente, mensagemErro, configPendente };
 })();

@@ -46,6 +46,8 @@ create table if not exists public.chamado_itens (
 );
 
 create index if not exists chamado_itens_chamado_idx on public.chamado_itens (chamado_id, ordem);
+-- Motivo próprio de cada produto (ex.: um em falta, outro com falta de peso).
+alter table public.chamado_itens add column if not exists motivo text;
 
 create table if not exists public.mensagens (
   id          bigint generated always as identity primary key,
@@ -289,8 +291,9 @@ begin
     if nullif(v_item->>'quantidade', '') is not null then
       v_qtd := greatest(0, (v_item->>'quantidade')::numeric)::integer;
     end if;
-    insert into public.chamado_itens (chamado_id, ordem, sku, produto, quantidade)
-    values (v_id, v_ordem, left(nullif(trim(v_item->>'sku'), ''), 60), left(nullif(trim(v_item->>'produto'), ''), 200), v_qtd);
+    insert into public.chamado_itens (chamado_id, ordem, sku, produto, quantidade, motivo)
+    values (v_id, v_ordem, left(nullif(trim(v_item->>'sku'), ''), 60), left(nullif(trim(v_item->>'produto'), ''), 200), v_qtd,
+            left(nullif(trim(v_item->>'motivo'), ''), 120));
   end loop;
 
   insert into public.mensagens (chamado_id, autor, texto) values (v_id, 'sistema', 'Chamado aberto pela loja');
@@ -337,7 +340,7 @@ as $$
     'loja_nome', c.loja_nome, 'nf', c.nf, 'descricao', c.descricao, 'anexos_qtd', cardinality(c.anexos),
     'criado_em', c.criado_em, 'atualizado_em', c.atualizado_em,
     'itens', coalesce((
-      select jsonb_agg(jsonb_build_object('sku', i.sku, 'produto', i.produto, 'quantidade', i.quantidade,
+      select jsonb_agg(jsonb_build_object('sku', i.sku, 'produto', i.produto, 'quantidade', i.quantidade, 'motivo', i.motivo,
                                           'decisao', i.decisao, 'qtd_aceita', i.qtd_aceita, 'justificativa', i.justificativa)
                        order by i.ordem)
       from public.chamado_itens i where i.chamado_id = c.id

@@ -26,7 +26,7 @@
     </a>
     <nav class="tabs" id="tabs" aria-label="Seções" hidden>
       <button class="tab" type="button" data-view="fila" aria-current="page">Fila <span class="n" id="n-atrasados" hidden></span></button>
-      <button class="tab" type="button" data-view="link">Link para as lojas</button>
+      <button class="tab" type="button" data-view="link">Lojas</button>
       <button class="tab" type="button" id="sair">Sair</button>
     </nav>
   </div>
@@ -67,20 +67,62 @@
       <select id="fs" aria-label="Status"></select>
       <select id="ft" aria-label="Tipo"></select>
     </div>
+    <div class="chip-filtro" id="filtro-loja" hidden>Mostrando só os chamados de <b id="filtro-loja-nome"></b><button class="btn small" type="button" id="filtro-loja-limpar">Ver todas as lojas</button></div>
     <div class="list" id="lista"></div>
   </section>
 
-  <!-- Link para lojas -->
+  <!-- Lojas -->
   <section id="v-link" hidden>
-    <div class="head-row"><div><h1>Link para as lojas</h1><p class="lead">Mande este link no WhatsApp das lojas ou imprima o QR code e cole no balcão. Elas não precisam de login.</p></div></div>
-    <div class="team-grid">
-      <div class="card" style="display:grid;gap:14px;justify-items:start">
-        <span class="mono" id="link-loja" style="user-select:all;overflow-wrap:anywhere;font-size:15px"></span>
+    <div class="head-row">
+      <div><h1>Lojas</h1><p class="lead">Cada loja tem um link próprio: quem abre já encontra o formulário com a loja identificada, sem digitar nome, CNPJ e cidade. Mande o link no WhatsApp ou imprima o QR code para o balcão.</p></div>
+      <div class="actions" style="margin-top:0">
+        <button class="btn" type="button" id="lj-importar">Importar lista</button>
+        <button class="btn primary" type="button" id="lj-nova">Nova loja</button>
+      </div>
+    </div>
+
+    <form class="card lj-form" id="lj-form" novalidate hidden>
+      <h2 id="lj-form-tit">Nova loja</h2>
+      <div class="fields">
+        <label class="f full"><span>Nome da loja <span class="req">*</span></span><input type="text" id="lj-nome" maxlength="200" placeholder="Ex.: UniSuper Centro"></label>
+        <label class="f">CNPJ<input type="text" id="lj-cnpj" inputmode="numeric" maxlength="30" placeholder="00.000.000/0000-00"></label>
+        <label class="f">Cidade / UF<input type="text" id="lj-cidade" maxlength="120" placeholder="Ex.: Campinas / SP"></label>
+        <label class="f">Contato principal <small>sugerido no formulário; a pessoa pode trocar</small><input type="text" id="lj-contato" maxlength="120"></label>
+        <label class="f">WhatsApp da loja<input type="tel" id="lj-whats" inputmode="tel" placeholder="(11) 98765-4321"></label>
+      </div>
+      <div class="actions">
+        <button class="btn primary" type="submit" id="lj-salvar">Salvar loja</button>
+        <button class="btn" type="button" id="lj-cancelar">Cancelar</button>
+        <span class="muted" id="lj-msg" role="status"></span>
+      </div>
+    </form>
+
+    <div class="card lj-form" id="lj-imp" hidden>
+      <h2>Importar lista de lojas</h2>
+      <p class="lead">Copie as colunas da planilha e cole abaixo, uma loja por linha, nesta ordem: <b>Nome, CNPJ, Cidade, Contato, WhatsApp</b>. Só o nome é obrigatório. A linha de títulos, se vier junto, é ignorada.</p>
+      <textarea id="lj-imp-txt" style="margin-top:12px;min-height:160px" placeholder="UniSuper Centro	12.345.678/0001-90	Campinas / SP	Marcos	(11) 98765-4321"></textarea>
+      <div class="actions">
+        <button class="btn primary" type="button" id="lj-imp-ok">Importar</button>
+        <button class="btn" type="button" id="lj-imp-cancelar">Cancelar</button>
+        <span class="muted" id="lj-imp-msg" role="status"></span>
+      </div>
+    </div>
+
+    <div class="filters" style="grid-template-columns:minmax(0,1fr) 200px">
+      <input type="search" id="lj-q" placeholder="Buscar loja por nome, CNPJ ou cidade" aria-label="Buscar loja">
+      <select id="lj-filtro" aria-label="Situação"><option value="ativas">Lojas ativas</option><option value="inativas">Desativadas</option><option value="todas">Todas</option></select>
+    </div>
+    <div class="list" id="lj-lista"></div>
+
+    <div class="team-grid" style="margin-top:24px">
+      <div class="card" style="display:grid;gap:10px;justify-items:start">
+        <h3 style="font-size:15px">Link geral (sem loja)</h3>
+        <p class="muted" style="margin:0">Para quem ainda não está cadastrado: a pessoa preenche os dados da loja na primeira vez.</p>
+        <span class="mono" id="link-loja" style="user-select:all;overflow-wrap:anywhere;font-size:14px"></span>
         <div class="actions" style="margin-top:0">
-          <button class="btn primary" type="button" id="link-copiar">Copiar link</button>
-          <button class="btn" type="button" id="link-msg">Copiar mensagem para as lojas</button>
+          <button class="btn small" type="button" id="link-copiar">Copiar link</button>
+          <button class="btn small" type="button" id="link-qr">Ver QR code</button>
         </div>
-        <div id="qr" style="background:#fff;padding:12px;border-radius:8px"></div>
       </div>
       <div class="card" style="display:grid;gap:10px">
         <h3 style="font-size:15px">Equipe com acesso ao painel</h3>
@@ -118,6 +160,24 @@
     <span class="grupo">Uma empresa do <span class="selo"><img src="img/unisuper-logo.png" alt="Grupo UniSuper" width="153" height="80"></span></span>
   </div>
 </footer>
+
+<div id="qr-root" hidden>
+  <div class="scrim" id="qr-scrim"></div>
+  <div class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-tit">
+    <div class="qr-cab"><h2 id="qr-tit"></h2><button class="btn small" type="button" id="qr-fechar">Fechar</button></div>
+    <div class="qr-folha" id="qr-folha">
+      <img class="qr-logo" src="img/victos-logo.png" alt="Victos">
+      <div id="qr-codigo" class="qr-codigo"></div>
+      <b id="qr-nome"></b>
+      <span>Aponte a câmera do celular para abrir um chamado no SAC</span>
+    </div>
+    <span class="mono qr-link" id="qr-link"></span>
+    <div class="actions" style="margin-top:0">
+      <button class="btn primary" type="button" id="qr-baixar">Baixar QR code</button>
+      <button class="btn" type="button" id="qr-copiar">Copiar link</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast" role="status" hidden></div>
 
@@ -174,7 +234,7 @@
     if (!ok) { $('negado-email').textContent = S.email; mostrar('negado'); return; }
     $('banners').innerHTML = '';
     mostrar(S.view);
-    await Promise.all([carregarEquipe(), carregar()]);
+    await Promise.all([carregarEquipe(), carregar(), carregarLojas()]);
     assinar();
   }
 
@@ -191,6 +251,7 @@
     S.tickets = data || [];
     S.tickets.forEach((t) => { t.itens = (t.itens || []).slice().sort((a, b) => a.ordem - b.ordem); });
     renderFila();
+    if (S.lojas) renderLojas();
     if (S.aberto) renderGaveta();
   }
   let recarga = null;
@@ -200,6 +261,7 @@
     S.canal = sb.channel('fila-sac')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chamados' }, agendarRecarga)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chamado_itens' }, agendarRecarga)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lojas' }, () => carregarLojas())
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensagens' }, (p) => {
         if (S.aberto && p.new && p.new.chamado_id === S.aberto) carregarMensagens();
       })
@@ -225,6 +287,7 @@
       if (S.filtro.status === 'atrasados' && !(ABERTOS.includes(t.status) && prazoInfo(t).atrasado)) return false;
       if (STATUS[S.filtro.status] && t.status !== S.filtro.status) return false;
       if (S.filtro.tipo && t.tipo !== S.filtro.tipo) return false;
+      if (S.filtro.loja && t.loja_id !== S.filtro.loja) return false;
       if (q) {
         const alvo = [t.protocolo, t.loja_nome, t.loja_cidade, t.loja_contato, t.nf, t.motivo].concat((t.itens || []).flatMap((i) => [i.sku, i.produto])).join(' ').toLowerCase();
         if (!alvo.includes(q) && !(qd.length >= 4 && (soDigitos(t.loja_cnpj).includes(qd) || t.loja_whatsapp.includes(qd)))) return false;
@@ -262,6 +325,8 @@
       ['aguardando', 'Aguardando loja', aguard, aguard ? 'warn' : ''], ['resolvido', 'Resolvidos (7 dias)', resolvidos, 'ok']
     ].map(([f, r, n, c]) => `<button class="kpi ${c}" type="button" data-filtro="${f}"><span>${r}</span><b>${n}</b></button>`).join('');
     const lista = filtrados();
+    $('filtro-loja').hidden = !S.filtro.loja;
+    if (S.filtro.loja) $('filtro-loja-nome').textContent = S.filtro.lojaNome;
     $('lista').innerHTML = !S.tickets.length
       ? '<div class="empty"><b>Nenhum chamado ainda</b><span>Mande o link da aba "Link para as lojas". Quando a primeira loja enviar, o chamado aparece aqui na hora.</span></div>'
       : !lista.length ? '<div class="empty"><b>Nada com esses filtros</b><span>Mude o status ou limpe a busca.</span></div>'
@@ -277,6 +342,7 @@
     const b = e.target.closest('[data-filtro]');
     if (b) { S.filtro.status = b.dataset.filtro; $('fs').value = S.filtro.status; renderFila(); }
   });
+  $('filtro-loja-limpar').addEventListener('click', () => { S.filtro.loja = null; S.filtro.status = 'abertos'; $('fs').value = 'abertos'; renderFila(); });
   $('lista').addEventListener('click', (e) => { const r = e.target.closest('.row[data-id]'); if (r) abrir(r.dataset.id); });
   document.querySelectorAll('.tab[data-view]').forEach((b) => b.addEventListener('click', () => { S.view = b.dataset.view; mostrar(S.view); window.scrollTo(0, 0); }));
 
@@ -510,13 +576,167 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   });
 
-  // ---------- link e QR ----------
+  // ---------- lojas ----------
+  const linkDaLoja = (l) => linkLoja + '?loja=' + encodeURIComponent(l.codigo);
+  async function carregarLojas() {
+    const { data, error } = await sb.from('lojas').select('*').order('nome');
+    if (error) { $('lj-lista').innerHTML = `<div class="empty"><b>Não foi possível carregar as lojas</b><span>${esc(mensagemErro(error))}</span></div>`; return; }
+    S.lojas = data || [];
+    renderLojas();
+  }
+  function renderLojas() {
+    const q = ($('lj-q').value || '').trim().toLowerCase(), qd = soDigitos(q);
+    const filtro = $('lj-filtro').value;
+    const porLoja = {};
+    S.tickets.forEach((t) => { if (t.loja_id) porLoja[t.loja_id] = (porLoja[t.loja_id] || 0) + 1; });
+    const lista = (S.lojas || []).filter((l) => (filtro === 'todas' || (filtro === 'ativas') === l.ativa) &&
+      (!q || [l.nome, l.cidade, l.contato].join(' ').toLowerCase().includes(q) || (qd.length >= 4 && soDigitos(l.cnpj).includes(qd))));
+    if (!(S.lojas || []).length) {
+      $('lj-lista').innerHTML = '<div class="empty"><b>Nenhuma loja cadastrada ainda</b><span>Use "Nova loja" ou "Importar lista" para colar as lojas de uma planilha. Cada uma ganha um link e um QR code próprios.</span></div>';
+      return;
+    }
+    $('lj-lista').innerHTML = lista.length ? lista.map((l) => `<div class="lj-row${l.ativa ? '' : ' inativa'}" data-loja="${esc(l.id)}">
+        <div class="lj-info"><b>${esc(l.nome)}</b>${l.ativa ? '' : ' <span class="tag">Desativada</span>'}
+          <span class="sub">${esc([l.cnpj, l.cidade, l.contato].filter(Boolean).join(' · ') || 'Sem CNPJ e cidade')}</span></div>
+        <button class="btn small ghost" type="button" data-acao="chamados">${porLoja[l.id] || 0} chamado${porLoja[l.id] === 1 ? '' : 's'}</button>
+        <div class="lj-acoes">
+          ${l.ativa ? `<button class="btn small" type="button" data-acao="copiar">Copiar link</button>
+          <button class="btn small" type="button" data-acao="qr">QR code</button>
+          <button class="btn small" type="button" data-acao="msg">Mensagem</button>` : ''}
+          <button class="btn small" type="button" data-acao="editar">Editar</button>
+          <button class="btn small" type="button" data-acao="ativar">${l.ativa ? 'Desativar' : 'Reativar'}</button>
+        </div>
+      </div>`).join('') : '<div class="empty"><b>Nenhuma loja com esse filtro</b></div>';
+  }
+  $('lj-q').addEventListener('input', renderLojas);
+  $('lj-filtro').addEventListener('change', renderLojas);
+
+  function mensagemLoja(l) {
+    return `Olá, ${l.nome}! Este é o link de vocês para abrir chamados no SAC${cfg.empresa ? ' da ' + cfg.empresa : ''} (reclamações, devoluções, avarias e dúvidas):\n${linkDaLoja(l)}\n\n` +
+      'Os dados da loja já vêm preenchidos. Salve nos favoritos ou adicione à tela inicial do celular.';
+  }
+
+  let editando = null;
+  function abrirForm(l) {
+    editando = l || null;
+    $('lj-imp').hidden = true;
+    $('lj-form').hidden = false;
+    $('lj-form-tit').textContent = l ? 'Editar ' + l.nome : 'Nova loja';
+    $('lj-nome').value = l?.nome || ''; $('lj-cnpj').value = l?.cnpj || ''; $('lj-cidade').value = l?.cidade || '';
+    $('lj-contato').value = l?.contato || ''; $('lj-whats').value = l?.whatsapp ? foneBonito(l.whatsapp) : '';
+    $('lj-msg').textContent = '';
+    $('lj-nome').focus();
+  }
+  $('lj-nova').addEventListener('click', () => abrirForm(null));
+  $('lj-cancelar').addEventListener('click', () => { $('lj-form').hidden = true; });
+  $('lj-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const dados = { nome: $('lj-nome').value.trim(), cnpj: $('lj-cnpj').value.trim() || null, cidade: $('lj-cidade').value.trim() || null,
+      contato: $('lj-contato').value.trim() || null, whatsapp: soDigitos($('lj-whats').value) || null };
+    if (!dados.nome) { $('lj-msg').textContent = 'Informe o nome da loja.'; $('lj-nome').focus(); return; }
+    if (dados.whatsapp && dados.whatsapp.length < 10) { $('lj-msg').textContent = 'Confira o WhatsApp: use DDD + número.'; return; }
+    $('lj-salvar').disabled = true;
+    const req = editando ? sb.from('lojas').update(dados).eq('id', editando.id) : sb.from('lojas').insert(dados);
+    const { error } = await req;
+    $('lj-salvar').disabled = false;
+    if (error) { $('lj-msg').textContent = mensagemErro(error); return; }
+    $('lj-form').hidden = true;
+    toast(editando ? 'Loja atualizada.' : 'Loja cadastrada. O link dela já está pronto.');
+    carregarLojas();
+  });
+
+  // Importação: colado do Excel (separado por tabulação) ou CSV com ponto e vírgula.
+  $('lj-importar').addEventListener('click', () => { $('lj-form').hidden = true; $('lj-imp').hidden = false; $('lj-imp-msg').textContent = ''; $('lj-imp-txt').focus(); });
+  $('lj-imp-cancelar').addEventListener('click', () => { $('lj-imp').hidden = true; });
+  $('lj-imp-ok').addEventListener('click', async () => {
+    const linhas = $('lj-imp-txt').value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const novas = [];
+    linhas.forEach((linha, i) => {
+      const c = linha.split(linha.includes('\t') ? '\t' : ';').map((x) => x.trim());
+      if (i === 0 && /^nome/i.test(c[0])) return;
+      if (!c[0]) return;
+      novas.push({ nome: c[0].slice(0, 200), cnpj: c[1] || null, cidade: c[2] || null, contato: c[3] || null, whatsapp: soDigitos(c[4]) || null });
+    });
+    if (!novas.length) { $('lj-imp-msg').textContent = 'Nenhuma loja encontrada no texto colado.'; return; }
+    const existentes = new Set((S.lojas || []).map((l) => soDigitos(l.cnpj) || l.nome.toLowerCase()));
+    const inserir = novas.filter((l) => !existentes.has(soDigitos(l.cnpj) || l.nome.toLowerCase()));
+    const repetidas = novas.length - inserir.length;
+    if (!inserir.length) { $('lj-imp-msg').textContent = 'Todas essas lojas já estão cadastradas.'; return; }
+    $('lj-imp-ok').disabled = true; $('lj-imp-msg').textContent = 'Importando ' + inserir.length + ' lojas…';
+    const { error } = await sb.from('lojas').insert(inserir);
+    $('lj-imp-ok').disabled = false;
+    if (error) { $('lj-imp-msg').textContent = mensagemErro(error); return; }
+    $('lj-imp').hidden = true; $('lj-imp-txt').value = '';
+    toast(inserir.length + (inserir.length === 1 ? ' loja importada' : ' lojas importadas') + (repetidas ? '; ' + repetidas + (repetidas === 1 ? ' já existia e foi pulada.' : ' já existiam e foram puladas.') : '.'));
+    carregarLojas();
+  });
+
+  $('lj-lista').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-acao]');
+    if (!b) return;
+    const l = (S.lojas || []).find((x) => x.id === b.closest('[data-loja]').dataset.loja);
+    if (!l) return;
+    const acao = b.dataset.acao;
+    if (acao === 'copiar') copiar(linkDaLoja(l));
+    if (acao === 'qr') abrirQr(l.nome, linkDaLoja(l));
+    if (acao === 'msg') copiar(mensagemLoja(l));
+    if (acao === 'editar') { abrirForm(l); window.scrollTo(0, 0); }
+    if (acao === 'chamados') {
+      S.filtro = { q: '', status: 'todos', tipo: '', loja: l.id, lojaNome: l.nome };
+      $('q').value = ''; $('fs').value = 'todos'; $('ft').value = '';
+      S.view = 'fila'; mostrar('fila'); renderFila(); window.scrollTo(0, 0);
+    }
+    if (acao === 'ativar') {
+      const { error } = await sb.from('lojas').update({ ativa: !l.ativa }).eq('id', l.id);
+      if (error) { toast(mensagemErro(error)); return; }
+      toast(l.ativa ? 'Loja desativada: o link dela deixou de funcionar.' : 'Loja reativada: o link voltou a funcionar.');
+      carregarLojas();
+    }
+  });
+
+  // ---------- QR code ----------
+  function abrirQr(titulo, link) {
+    $('qr-tit').textContent = titulo; $('qr-nome').textContent = titulo; $('qr-link').textContent = link;
+    $('qr-codigo').innerHTML = '';
+    if (window.QRCode) new QRCode($('qr-codigo'), { text: link, width: 220, height: 220, colorDark: '#1e2a3c', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+    $('qr-root').hidden = false;
+    $('qr-copiar').onclick = () => copiar(link);
+    $('qr-baixar').onclick = () => baixarQr(titulo);
+    $('qr-fechar').focus();
+  }
+  function fecharQr() { $('qr-root').hidden = true; }
+  $('qr-fechar').addEventListener('click', fecharQr);
+  $('qr-scrim').addEventListener('click', fecharQr);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('qr-root').hidden) fecharQr(); });
+  // Gera uma imagem pronta para imprimir: logo, QR, nome da loja e instrução.
+  function baixarQr(titulo) {
+    const qr = $('qr-codigo').querySelector('canvas');
+    if (!qr) { toast('Não foi possível gerar a imagem do QR code.'); return; }
+    const W = 800, H = 1000, c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+    const grad = g.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0, '#f6a531'); grad.addColorStop(0.55, '#e8541e'); grad.addColorStop(1, '#c8202a');
+    g.fillStyle = grad; g.fillRect(0, 0, W, 14);
+    const logo = $('qr-folha').querySelector('.qr-logo');
+    if (logo.complete && logo.naturalWidth) { const lw = 360, lh = lw * logo.naturalHeight / logo.naturalWidth; g.drawImage(logo, (W - lw) / 2, 60, lw, lh); }
+    g.imageSmoothingEnabled = false;
+    g.drawImage(qr, (W - 520) / 2, 230, 520, 520);
+    g.fillStyle = '#1e2a3c'; g.textAlign = 'center';
+    g.font = 'bold 44px Quicksand, Arial, sans-serif'; g.fillText(titulo.slice(0, 32), W / 2, 830);
+    g.fillStyle = '#5a6b85'; g.font = '28px "Open Sans", Arial, sans-serif';
+    g.fillText('Aponte a câmera do celular para abrir', W / 2, 890);
+    g.fillText('um chamado no SAC', W / 2, 930);
+    const a = document.createElement('a');
+    a.href = c.toDataURL('image/png');
+    a.download = 'qrcode-' + titulo.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.png';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
   $('link-loja').textContent = linkLoja;
   $('link-copiar').addEventListener('click', () => copiar(linkLoja));
-  $('link-msg').addEventListener('click', () => copiar(
-    `Olá! A partir de agora, reclamações, devoluções, avarias e dúvidas são abertas por este link: ${linkLoja}\n` +
-    'Você recebe um número de protocolo e acompanha a resposta pelo mesmo endereço. Não precisa de cadastro.'));
-  if (window.QRCode) new QRCode($('qr'), { text: linkLoja, width: 200, height: 200, colorDark: '#12262b', colorLight: '#ffffff' });
+  $('link-qr').addEventListener('click', () => abrirQr('SAC Victos', linkLoja));
 })();
 </script>
 </body>

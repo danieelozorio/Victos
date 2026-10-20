@@ -291,3 +291,40 @@ span.f small { font-weight: 400; color: var(--muted); }
 .seg button[data-dec="pendente"][aria-pressed="true"] { background: var(--info-soft); color: var(--info); }
 .midia-video { grid-column: span 2; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: #000; }
 .midia-video video { width: 100%; display: block; max-height: 320px; }
+
+/* Loja identificada pelo link */
+.loja-fixa { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 14px 16px; margin-bottom: 14px; border-radius: 10px; background: var(--accent-soft); border: 1px solid var(--line); }
+.loja-fixa > div { display: flex; flex-direction: column; min-width: 0; }
+.loja-fixa b { font-family: var(--f-display); font-size: 18px; overflow-wrap: anywhere; }
+.lf-rot { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+
+/* Lojas (painel) */
+.lj-form { margin-bottom: 18px; display: grid; gap: 12px; }
+.lj-form .fields { margin-top: 4px; }
+.lj-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px 14px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); }
+.lj-row:first-child { border-top: 0; }
+.lj-row.inativa { opacity: .65; }
+.lj-info { display: flex; flex-direction: column; min-width: 0; }
+.lj-info b { overflow-wrap: anywhere; }
+.lj-info .sub { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.lj-acoes { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--accent); }
+.btn.ghost:hover { border-color: var(--line); }
+@media (max-width: 900px) {
+  .lj-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .lj-acoes { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
+/* Janela do QR code */
+.qr-modal { position: fixed; z-index: 31; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow-y: auto; background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 18px; display: grid; gap: 14px; }
+#qr-root .scrim { z-index: 30; }
+.qr-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.qr-cab h2 { font-size: 18px; overflow-wrap: anywhere; }
+.qr-folha { background: var(--selo); color: #1e2a3c; border-radius: 10px; border: 1px solid var(--line); padding: 18px; display: grid; gap: 10px; justify-items: center; text-align: center; }
+.qr-folha .qr-logo { width: 170px; height: auto; }
+.qr-folha b { font-family: var(--f-display); font-size: 18px; }
+.qr-folha span { font-size: 13px; color: #5a6b85; }
+.qr-codigo img, .qr-codigo canvas { width: 220px; height: 220px; }
+.qr-link { font-size: 13px; overflow-wrap: anywhere; color: var(--muted); }
+.chip-filtro { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 14px; margin-bottom: 12px; border-radius: 10px; background: var(--accent-soft); }
+.people li .av { flex: none; }

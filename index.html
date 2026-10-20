@@ -48,10 +48,11 @@
 
         <fieldset>
           <legend>Dados da loja</legend>
+          <div class="loja-fixa" id="loja-fixa" hidden></div>
           <div class="fields">
-            <label class="f full"><span>Nome da loja <span class="req">*</span></span><input type="text" id="f-loja" autocomplete="organization" maxlength="200" required></label>
-            <label class="f">CNPJ<input type="text" id="f-cnpj" inputmode="numeric" maxlength="30" placeholder="00.000.000/0000-00"></label>
-            <label class="f">Cidade / UF<input type="text" id="f-cidade" maxlength="120" placeholder="Ex.: Campinas / SP"></label>
+            <label class="f full manual"><span>Nome da loja <span class="req">*</span></span><input type="text" id="f-loja" autocomplete="organization" maxlength="200" required></label>
+            <label class="f manual">CNPJ<input type="text" id="f-cnpj" inputmode="numeric" maxlength="30" placeholder="00.000.000/0000-00"></label>
+            <label class="f manual">Cidade / UF<input type="text" id="f-cidade" maxlength="120" placeholder="Ex.: Campinas / SP"></label>
             <label class="f"><span>Seu nome <span class="req">*</span></span><input type="text" id="f-contato" autocomplete="name" maxlength="120" required></label>
             <label class="f"><span>WhatsApp para retorno <span class="req">*</span></span><input type="tel" id="f-whats" inputmode="tel" autocomplete="tel" placeholder="(11) 98765-4321" required></label>
           </div>
@@ -241,6 +242,45 @@
     $('f-contato').value = salvo.contato || ''; $('f-whats').value = salvo.whatsapp || '';
   }
 
+  // Link próprio da loja (?loja=código): o formulário já abre com a loja identificada.
+  // O código fica guardado no aparelho, então o endereço comum também reconhece a loja depois.
+  let lojaFixa = null;
+  function mostrarLojaFixa(l) {
+    lojaFixa = l;
+    $('loja-fixa').hidden = !l;
+    document.querySelectorAll('#form .manual').forEach((el) => { el.hidden = !!l; });
+    if (!l) return;
+    $('loja-fixa').innerHTML = `<div><span class="lf-rot">Chamado em nome de</span><b>${esc(l.nome)}</b>
+      <span class="muted">${esc([l.cnpj, l.cidade].filter(Boolean).join(' · '))}</span></div>
+      <button class="btn small" type="button" id="lf-trocar">Não é a sua loja?</button>`;
+    $('f-loja').value = l.nome; $('f-cnpj').value = l.cnpj || ''; $('f-cidade').value = l.cidade || '';
+    // Quem atende pode variar: usa o que esta pessoa já digitou antes; senão, o contato cadastrado.
+    if (!$('f-contato').value && l.contato) $('f-contato').value = l.contato;
+    if (!$('f-whats').value && l.whatsapp) $('f-whats').value = l.whatsapp;
+    $('lf-trocar').addEventListener('click', () => {
+      store.set('sac.lojaCodigo', null);
+      ['f-loja', 'f-cnpj', 'f-cidade'].forEach((id) => { $(id).value = ''; });
+      mostrarLojaFixa(null);
+      $('f-loja').focus();
+    });
+  }
+  async function identificarLoja() {
+    let codigo = null;
+    try { codigo = new URLSearchParams(location.search).get('loja'); } catch (e) { /* ok */ }
+    if (codigo) store.set('sac.lojaCodigo', codigo.trim().toLowerCase());
+    codigo = store.get('sac.lojaCodigo');
+    if (!codigo || !sb) return;
+    const { data, error } = await sb.rpc('loja_por_codigo', { p_codigo: codigo });
+    if (error) return; // sem conexão: segue com o formulário comum
+    if (!data) {
+      store.set('sac.lojaCodigo', null);
+      if (new URLSearchParams(location.search).get('loja')) toast('Este link de loja não está mais ativo. Preencha os dados da loja.');
+      return;
+    }
+    mostrarLojaFixa(data);
+  }
+  identificarLoja();
+
   // Fotos e vídeos: câmera e gravação trazem um por vez e a galeria pode trazer vários, então guardamos a lista aqui.
   let anexosSel = [];
   const celular = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
@@ -316,7 +356,8 @@
       const loja = { nome: v('f-loja'), cnpj: v('f-cnpj'), cidade: v('f-cidade'), contato: v('f-contato'), whatsapp: v('f-whats') };
       const { data, error } = await sb.rpc('abrir_chamado', { dados: {
         tipo, motivo: v('f-motivo'), loja_nome: loja.nome, loja_cnpj: loja.cnpj, loja_cidade: loja.cidade,
-        loja_contato: loja.contato, loja_whatsapp: loja.whatsapp, nf: v('f-nf'), descricao: v('f-desc'), itens, anexos
+        loja_contato: loja.contato, loja_whatsapp: loja.whatsapp, nf: v('f-nf'), descricao: v('f-desc'), itens, anexos,
+        loja_codigo: lojaFixa ? lojaFixa.codigo : null
       } });
       if (error) throw error;
       const protocolo = data.protocolo;

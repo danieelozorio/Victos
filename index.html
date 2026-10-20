@@ -210,10 +210,11 @@
     const d = document.createElement('div');
     d.className = 'item-linha';
     d.innerHTML = `<span class="item-n" aria-hidden="true"></span>
-      <label class="f c-sku">Código (SKU)<input type="text" data-k="sku" maxlength="60" autocomplete="off"></label>
-      <label class="f c-desc">Descrição do produto<input type="text" data-k="produto" maxlength="200" autocomplete="off"></label>
+      <label class="f c-sku">Código (SKU)<input type="text" data-k="sku" maxlength="60" autocomplete="off" inputmode="numeric" placeholder="Digite o código"></label>
+      <label class="f c-desc">Descrição do produto<input type="text" data-k="produto" maxlength="200" autocomplete="off" placeholder="ou comece pelo nome"></label>
       <label class="f c-qtd">Qtd.<input type="number" data-k="quantidade" min="0" step="1" inputmode="numeric"></label>
-      <button class="item-rem" type="button" aria-label="Remover este produto">×</button>`;
+      <button class="item-rem" type="button" aria-label="Remover este produto">×</button>
+      <ul class="sugestoes" role="listbox" aria-label="Produtos do catálogo" hidden></ul>`;
     $('itens').appendChild(d);
     atualizarLinhas();
     return d;
@@ -235,6 +236,68 @@
     if (b) { b.closest('.item-linha').remove(); atualizarLinhas(); }
   });
   limparItens();
+
+  // Catálogo: ao digitar o código, o nome aparece; ao digitar o nome, sugere produtos com o código.
+  // Produto fora do catálogo continua aceito, digitado à mão.
+  const buscasPendentes = new WeakMap();
+  function preencher(linha, p) {
+    linha.querySelector('[data-k="sku"]').value = p.sku;
+    linha.querySelector('[data-k="produto"]').value = p.nome;
+    linha.dataset.cat = '1';
+    fecharSugestoes(linha);
+  }
+  function fecharSugestoes(linha) { const ul = linha.querySelector('.sugestoes'); ul.hidden = true; ul.innerHTML = ''; }
+  $('itens').addEventListener('input', (e) => {
+    const campo = e.target.closest('[data-k="sku"], [data-k="produto"]');
+    if (!campo || !sb) return;
+    const linha = campo.closest('.item-linha');
+    delete linha.dataset.cat;
+    clearTimeout(buscasPendentes.get(linha));
+    const q = campo.value.trim();
+    if (q.length < 2) { fecharSugestoes(linha); return; }
+    buscasPendentes.set(linha, setTimeout(async () => {
+      const pedido = (linha.dataset.pedido = String(Number(linha.dataset.pedido || 0) + 1));
+      const { data, error } = await sb.rpc('buscar_produtos', { p_busca: q, p_limite: 8 });
+      if (error || linha.dataset.pedido !== pedido || !Array.isArray(data)) return;
+      const exato = campo.dataset.k === 'sku' && data.find((p) => p.sku.toLowerCase() === q.toLowerCase());
+      if (exato) { preencher(linha, exato); return; }
+      const ul = linha.querySelector('.sugestoes');
+      if (!data.length) { fecharSugestoes(linha); return; }
+      ul.innerHTML = data.map((p, i) => `<li><button type="button" role="option" data-i="${i}"><b class="mono">${esc(p.sku)}</b><span>${esc(p.nome)}</span></button></li>`).join('');
+      ul._produtos = data;
+      ul.hidden = false;
+    }, 250));
+  });
+  $('itens').addEventListener('click', (e) => {
+    const b = e.target.closest('.sugestoes [data-i]');
+    if (!b) return;
+    const linha = b.closest('.item-linha');
+    preencher(linha, b.closest('.sugestoes')._produtos[Number(b.dataset.i)]);
+    linha.querySelector('[data-k="quantidade"]').focus();
+  });
+  $('itens').addEventListener('keydown', (e) => {
+    const linha = e.target.closest('.item-linha');
+    if (!linha) return;
+    const ul = linha.querySelector('.sugestoes');
+    if (e.key === 'Escape') { fecharSugestoes(linha); return; }
+    if (e.key === 'ArrowDown' && !ul.hidden) {
+      e.preventDefault();
+      const botoes = Array.from(ul.querySelectorAll('button'));
+      const i = botoes.indexOf(document.activeElement);
+      (botoes[i + 1] || botoes[0]).focus();
+    }
+    if (e.key === 'ArrowUp' && !ul.hidden && ul.contains(document.activeElement)) {
+      e.preventDefault();
+      const botoes = Array.from(ul.querySelectorAll('button'));
+      const i = botoes.indexOf(document.activeElement);
+      (i > 0 ? botoes[i - 1] : linha.querySelector('[data-k="produto"]')).focus();
+    }
+  });
+  // Fecha as sugestões ao sair da linha (o atraso deixa o toque na sugestão acontecer antes).
+  $('itens').addEventListener('focusout', (e) => {
+    const linha = e.target.closest('.item-linha');
+    if (linha) setTimeout(() => { if (!linha.contains(document.activeElement)) fecharSugestoes(linha); }, 200);
+  });
 
   const salvo = store.get('sac.loja');
   if (salvo) {

@@ -27,6 +27,7 @@
     <nav class="tabs" id="tabs" aria-label="Seções" hidden>
       <button class="tab" type="button" data-view="fila" aria-current="page">Fila <span class="n" id="n-atrasados" hidden></span></button>
       <button class="tab" type="button" data-view="link">Lojas</button>
+      <button class="tab" type="button" data-view="produtos">Produtos</button>
       <button class="tab" type="button" id="sair">Sair</button>
     </nav>
   </div>
@@ -71,6 +72,48 @@
     <div class="list" id="lista"></div>
   </section>
 
+  <!-- Produtos -->
+  <section id="v-produtos" hidden>
+    <div class="head-row">
+      <div><h1>Produtos</h1><p class="lead">Catálogo usado no formulário das lojas: quem digita o código vê o nome do produto, e quem digita o nome recebe sugestões com o código. Produtos fora do catálogo continuam podendo ser digitados.</p></div>
+      <div class="actions" style="margin-top:0">
+        <button class="btn" type="button" id="pr-importar">Importar lista</button>
+        <button class="btn primary" type="button" id="pr-novo">Novo produto</button>
+      </div>
+    </div>
+
+    <form class="card lj-form" id="pr-form" novalidate hidden>
+      <h2 id="pr-form-tit">Novo produto</h2>
+      <div class="fields">
+        <label class="f"><span>Código (SKU) <span class="req">*</span></span><input type="text" id="pr-sku" maxlength="60" autocomplete="off"></label>
+        <label class="f"><span>Nome do produto <span class="req">*</span></span><input type="text" id="pr-nome" maxlength="200" autocomplete="off"></label>
+      </div>
+      <div class="actions">
+        <button class="btn primary" type="submit" id="pr-salvar">Salvar produto</button>
+        <button class="btn" type="button" id="pr-cancelar">Cancelar</button>
+        <span class="muted" id="pr-msg" role="status"></span>
+      </div>
+    </form>
+
+    <div class="card lj-form" id="pr-imp" hidden>
+      <h2>Importar lista de produtos</h2>
+      <p class="lead">Copie duas colunas da planilha, <b>Código</b> e <b>Nome</b>, e cole abaixo, um produto por linha. Códigos que já existem têm o nome atualizado. A linha de títulos, se vier junto, é ignorada.</p>
+      <textarea id="pr-imp-txt" style="margin-top:12px;min-height:180px" placeholder="7891000100103	Açúcar Refinado União 1kg"></textarea>
+      <div class="actions">
+        <button class="btn primary" type="button" id="pr-imp-ok">Importar</button>
+        <button class="btn" type="button" id="pr-imp-cancelar">Cancelar</button>
+        <span class="muted" id="pr-imp-msg" role="status"></span>
+      </div>
+    </div>
+
+    <div class="filters dois">
+      <input type="search" id="pr-q" placeholder="Buscar por código ou nome" aria-label="Buscar produto">
+      <select id="pr-filtro" aria-label="Situação"><option value="ativos">Produtos ativos</option><option value="inativos">Desativados</option><option value="todos">Todos</option></select>
+    </div>
+    <p class="muted" id="pr-total" style="margin:0 0 8px"></p>
+    <div class="list" id="pr-lista"></div>
+  </section>
+
   <!-- Lojas -->
   <section id="v-link" hidden>
     <div class="head-row">
@@ -108,7 +151,7 @@
       </div>
     </div>
 
-    <div class="filters" style="grid-template-columns:minmax(0,1fr) 200px">
+    <div class="filters dois">
       <input type="search" id="lj-q" placeholder="Buscar loja por nome, CNPJ ou cidade" aria-label="Buscar loja">
       <select id="lj-filtro" aria-label="Situação"><option value="ativas">Lojas ativas</option><option value="inativas">Desativadas</option><option value="todas">Todas</option></select>
     </div>
@@ -196,8 +239,8 @@
     if (!sb) { $('banners').innerHTML = window.SAC.configPendente(); return; }
 
   function mostrar(sec) {
-    ['login', 'negado', 'fila', 'link'].forEach((v) => { $('v-' + v).hidden = v !== sec; });
-    $('tabs').hidden = !(sec === 'fila' || sec === 'link');
+    ['login', 'negado', 'fila', 'link', 'produtos'].forEach((v) => { $('v-' + v).hidden = v !== sec; });
+    $('tabs').hidden = !['fila', 'link', 'produtos'].includes(sec);
     document.querySelectorAll('.tab[data-view]').forEach((b) => {
       if (b.dataset.view === sec) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
@@ -234,7 +277,7 @@
     if (!ok) { $('negado-email').textContent = S.email; mostrar('negado'); return; }
     $('banners').innerHTML = '';
     mostrar(S.view);
-    await Promise.all([carregarEquipe(), carregar(), carregarLojas()]);
+    await Promise.all([carregarEquipe(), carregar(), carregarLojas(), carregarProdutos()]);
     assinar();
   }
 
@@ -692,6 +735,106 @@
       toast(l.ativa ? 'Loja desativada: o link dela deixou de funcionar.' : 'Loja reativada: o link voltou a funcionar.');
       carregarLojas();
     }
+  });
+
+  // ---------- produtos ----------
+  const semAcento = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  async function carregarProdutos() {
+    // O Supabase entrega no máximo 1000 linhas por vez; o catálogo pode ser maior.
+    const todos = [];
+    for (let de = 0; ; de += 1000) {
+      const { data, error } = await sb.from('produtos').select('sku, nome, ativo').order('nome').range(de, de + 999);
+      if (error) { $('pr-lista').innerHTML = `<div class="empty"><b>Não foi possível carregar os produtos</b><span>${esc(mensagemErro(error))}</span></div>`; return; }
+      todos.push(...data);
+      if (data.length < 1000) break;
+    }
+    S.produtos = todos;
+    renderProdutos();
+  }
+  function renderProdutos() {
+    const lista0 = S.produtos || [];
+    const q = semAcento($('pr-q').value.trim()), filtro = $('pr-filtro').value;
+    const lista = lista0.filter((p) => (filtro === 'todos' || (filtro === 'ativos') === p.ativo) &&
+      (!q || p.sku.toLowerCase().includes(q) || semAcento(p.nome).includes(q)));
+    const ativos = lista0.filter((p) => p.ativo).length;
+    $('pr-total').textContent = lista0.length ? `${ativos} produto${ativos === 1 ? '' : 's'} ativo${ativos === 1 ? '' : 's'} no catálogo` + (lista.length > 200 ? ` · mostrando 200 de ${lista.length}; use a busca para achar os outros` : '') : '';
+    if (!lista0.length) {
+      $('pr-lista').innerHTML = '<div class="empty"><b>Catálogo vazio</b><span>Use "Importar lista" para colar código e nome direto da planilha. Depois disso, o formulário das lojas passa a completar os produtos sozinho.</span></div>';
+      return;
+    }
+    $('pr-lista').innerHTML = lista.length ? lista.slice(0, 200).map((p) => `<div class="pr-row${p.ativo ? '' : ' inativa'}" data-sku="${esc(p.sku)}">
+        <b class="mono">${esc(p.sku)}</b><span class="pr-nome">${esc(p.nome)}${p.ativo ? '' : ' <span class="tag">Desativado</span>'}</span>
+        <div class="lj-acoes"><button class="btn small" type="button" data-acao="editar">Editar</button>
+        <button class="btn small" type="button" data-acao="ativar">${p.ativo ? 'Desativar' : 'Reativar'}</button></div>
+      </div>`).join('') : '<div class="empty"><b>Nenhum produto com essa busca</b></div>';
+  }
+  $('pr-q').addEventListener('input', renderProdutos);
+  $('pr-filtro').addEventListener('change', renderProdutos);
+
+  let editandoProd = null;
+  function abrirFormProduto(p) {
+    editandoProd = p || null;
+    $('pr-imp').hidden = true; $('pr-form').hidden = false;
+    $('pr-form-tit').textContent = p ? 'Editar produto' : 'Novo produto';
+    $('pr-sku').value = p?.sku || ''; $('pr-sku').readOnly = !!p;
+    $('pr-nome').value = p?.nome || ''; $('pr-msg').textContent = '';
+    (p ? $('pr-nome') : $('pr-sku')).focus();
+  }
+  $('pr-novo').addEventListener('click', () => abrirFormProduto(null));
+  $('pr-cancelar').addEventListener('click', () => { $('pr-form').hidden = true; });
+  $('pr-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const sku = $('pr-sku').value.trim(), nome = $('pr-nome').value.trim();
+    if (!sku || !nome) { $('pr-msg').textContent = 'Informe o código e o nome.'; return; }
+    if (!editandoProd && (S.produtos || []).some((p) => p.sku.toLowerCase() === sku.toLowerCase())) { $('pr-msg').textContent = 'Já existe um produto com esse código. Use "Editar" nele.'; return; }
+    $('pr-salvar').disabled = true;
+    const { error } = editandoProd ? await sb.from('produtos').update({ nome }).eq('sku', editandoProd.sku) : await sb.from('produtos').insert({ sku, nome });
+    $('pr-salvar').disabled = false;
+    if (error) { $('pr-msg').textContent = mensagemErro(error); return; }
+    $('pr-form').hidden = true;
+    toast(editandoProd ? 'Produto atualizado.' : 'Produto cadastrado.');
+    carregarProdutos();
+  });
+
+  $('pr-importar').addEventListener('click', () => { $('pr-form').hidden = true; $('pr-imp').hidden = false; $('pr-imp-msg').textContent = ''; $('pr-imp-txt').focus(); });
+  $('pr-imp-cancelar').addEventListener('click', () => { $('pr-imp').hidden = true; });
+  $('pr-imp-ok').addEventListener('click', async () => {
+    const porSku = new Map();
+    let ignoradas = 0;
+    $('pr-imp-txt').value.split(/\r?\n/).forEach((linha, i) => {
+      if (!linha.trim()) return;
+      const c = linha.split(linha.includes('\t') ? '\t' : ';').map((x) => x.trim());
+      if (i === 0 && /c[oó]d|sku|ean/i.test(c[0]) && !/\d/.test(c[0])) return;
+      if (!c[0] || !c[1]) { ignoradas++; return; }
+      porSku.set(c[0].slice(0, 60), { sku: c[0].slice(0, 60), nome: c[1].slice(0, 200), ativo: true });
+    });
+    const lista = Array.from(porSku.values());
+    if (!lista.length) { $('pr-imp-msg').textContent = 'Nenhum produto encontrado. Cada linha precisa de código e nome.'; return; }
+    const existentes = new Set((S.produtos || []).map((p) => p.sku));
+    const novos = lista.filter((p) => !existentes.has(p.sku)).length;
+    $('pr-imp-ok').disabled = true;
+    for (let i = 0; i < lista.length; i += 500) {
+      $('pr-imp-msg').textContent = `Importando ${Math.min(i + 500, lista.length)} de ${lista.length}…`;
+      const { error } = await sb.from('produtos').upsert(lista.slice(i, i + 500), { onConflict: 'sku' });
+      if (error) { $('pr-imp-ok').disabled = false; $('pr-imp-msg').textContent = mensagemErro(error) + ' (parou na linha ' + (i + 1) + ')'; carregarProdutos(); return; }
+    }
+    $('pr-imp-ok').disabled = false;
+    $('pr-imp').hidden = true; $('pr-imp-txt').value = '';
+    const atualizados = lista.length - novos;
+    toast(`${novos} produto${novos === 1 ? '' : 's'} novo${novos === 1 ? '' : 's'}` + (atualizados ? `, ${atualizados} atualizado${atualizados === 1 ? '' : 's'}` : '') + (ignoradas ? `; ${ignoradas} linha${ignoradas === 1 ? '' : 's'} sem código ou nome ignorada${ignoradas === 1 ? '' : 's'}` : '') + '.');
+    carregarProdutos();
+  });
+
+  $('pr-lista').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-acao]');
+    if (!b) return;
+    const p = (S.produtos || []).find((x) => x.sku === b.closest('[data-sku]').dataset.sku);
+    if (!p) return;
+    if (b.dataset.acao === 'editar') { abrirFormProduto(p); window.scrollTo(0, 0); return; }
+    const { error } = await sb.from('produtos').update({ ativo: !p.ativo }).eq('sku', p.sku);
+    if (error) { toast(mensagemErro(error)); return; }
+    toast(p.ativo ? 'Produto desativado: não aparece mais nas sugestões.' : 'Produto reativado.');
+    carregarProdutos();
   });
 
   // ---------- QR code ----------

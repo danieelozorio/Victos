@@ -89,6 +89,20 @@ create table if not exists public.lojas (
 alter table public.chamados add column if not exists loja_id uuid references public.lojas (id) on delete set null;
 create index if not exists chamados_loja_idx on public.chamados (loja_id);
 
+-- Catálogo de produtos: a loja digita o código e o nome aparece (e vice-versa).
+create table if not exists public.produtos (
+  sku        text primary key check (length(trim(sku)) between 1 and 60),
+  nome       text not null check (length(trim(nome)) between 1 and 200),
+  ativo      boolean not null default true,
+  criado_em  timestamptz not null default now()
+);
+
+-- Texto sem acento e em minúsculas, para a busca achar "acucar" em "Açúcar".
+create or replace function public.sem_acento(t text)
+returns text language sql immutable as $$
+  select translate(lower(coalesce(t, '')), 'áàâãäéèêëíìîïóòôõöúùûüçñ', 'aaaaaeeeeiiiiooooouuuucn');
+$$;
+
 -- ---------- Funções auxiliares ----------
 
 create or replace function public.eh_equipe()
@@ -150,6 +164,7 @@ alter table public.chamado_itens enable row level security;
 alter table public.mensagens     enable row level security;
 alter table public.equipe        enable row level security;
 alter table public.lojas         enable row level security;
+alter table public.produtos      enable row level security;
 
 drop policy if exists chamados_equipe_le     on public.chamados;
 drop policy if exists chamados_equipe_altera on public.chamados;
@@ -170,11 +185,16 @@ create policy mensagens_equipe_grava on public.mensagens for insert to authentic
 drop policy if exists lojas_equipe on public.lojas;
 create policy lojas_equipe on public.lojas for all to authenticated using (public.eh_equipe()) with check (public.eh_equipe());
 
+drop policy if exists produtos_equipe on public.produtos;
+create policy produtos_equipe on public.produtos for all to authenticated using (public.eh_equipe()) with check (public.eh_equipe());
+
 drop policy if exists equipe_le on public.equipe;
 create policy equipe_le on public.equipe for select to authenticated using (public.eh_equipe());
 
 revoke all on public.chamados, public.chamado_itens, public.mensagens, public.equipe, public.lojas from anon;
 grant select, insert, update, delete on public.lojas to authenticated;
+revoke all on public.produtos from anon;
+grant select, insert, update, delete on public.produtos to authenticated;
 grant select, update on public.chamados to authenticated;
 grant select on public.chamado_itens to authenticated;
 grant update (decisao, qtd_aceita, justificativa) on public.chamado_itens to authenticated;
@@ -277,6 +297,27 @@ begin
   return jsonb_build_object('protocolo', v_proto);
 end $$;
 
+-- Busca no catálogo para o formulário da loja: por código exato, começo do código ou parte do nome.
+create or replace function public.buscar_produtos(p_busca text, p_limite integer default 8)
+returns jsonb
+language sql stable security definer set search_path = public
+as $$
+  with b as (select trim(coalesce(p_busca, '')) as q, public.sem_acento(trim(coalesce(p_busca, ''))) as qn)
+  select coalesce(jsonb_agg(jsonb_build_object('sku', r.sku, 'nome', r.nome) order by r.ordem, r.nome), '[]'::jsonb)
+  from (
+    select p.sku, p.nome,
+           case when lower(p.sku) = lower(b.q) then 0
+                when lower(p.sku) like lower(b.q) || '%' then 1
+                when public.sem_acento(p.nome) like b.qn || '%' then 2
+                else 3 end as ordem
+      from public.produtos p, b
+     where p.ativo and length(b.q) >= 2
+       and (lower(p.sku) like lower(b.q) || '%' or public.sem_acento(p.nome) like '%' || b.qn || '%')
+     order by ordem, p.nome
+     limit least(greatest(coalesce(p_limite, 8), 1), 20)
+  ) r;
+$$;
+
 -- Dados da loja para o formulário que abre pelo link dela.
 create or replace function public.loja_por_codigo(p_codigo text)
 returns jsonb
@@ -333,6 +374,8 @@ revoke all on function public.abrir_chamado(jsonb) from public;
 revoke all on function public.consultar_chamado(text, text) from public;
 revoke all on function public.mensagem_loja(text, text, text) from public;
 revoke all on function public.loja_por_codigo(text) from public;
+revoke all on function public.buscar_produtos(text, integer) from public;
+grant execute on function public.buscar_produtos(text, integer) to anon, authenticated;
 grant execute on function public.loja_por_codigo(text) to anon, authenticated;
 grant execute on function public.abrir_chamado(jsonb) to anon, authenticated;
 grant execute on function public.consultar_chamado(text, text) to anon, authenticated;

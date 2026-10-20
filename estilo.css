@@ -360,3 +360,11 @@ span.f small { font-weight: 400; color: var(--muted); }
 }
 /* As sugestões abrem logo abaixo dos campos de código e nome, por cima do motivo. */
 .item-linha .sugestoes { grid-area: mot; top: -4px; left: 0; right: 0; }
+
+/* Quantidade com unidade (un / kg) */
+.item-linha { grid-template-columns: 28px minmax(0, 1fr) minmax(0, 2fr) 150px 32px; }
+.qtd-un { display: flex; }
+.qtd-un input { border-top-right-radius: 0; border-bottom-right-radius: 0; min-width: 0; }
+.qtd-un select { width: auto; flex: none; border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; padding-inline: 8px; font-weight: 600; background: var(--surface-2); }
+@media (max-width: 620px) { .item-linha { grid-template-columns: 28px minmax(0, 1fr) 132px; } }
+div.f { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px; min-width: 0; }

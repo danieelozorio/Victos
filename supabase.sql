@@ -48,6 +48,12 @@ create table if not exists public.chamado_itens (
 create index if not exists chamado_itens_chamado_idx on public.chamado_itens (chamado_id, ordem);
 -- Motivo próprio de cada produto (ex.: um em falta, outro com falta de peso).
 alter table public.chamado_itens add column if not exists motivo text;
+-- Quantidade em unidades ou quilos (com até 3 casas decimais).
+alter table public.chamado_itens add column if not exists unidade text not null default 'un';
+alter table public.chamado_itens drop constraint if exists chamado_itens_unidade_check;
+alter table public.chamado_itens add constraint chamado_itens_unidade_check check (unidade in ('un', 'kg'));
+alter table public.chamado_itens alter column quantidade type numeric(12, 3);
+alter table public.chamado_itens alter column qtd_aceita type numeric(12, 3);
 
 create table if not exists public.mensagens (
   id          bigint generated always as identity primary key,
@@ -222,7 +228,7 @@ declare
   v_itens     jsonb := coalesce(dados->'itens', '[]'::jsonb);
   v_item      jsonb;
   v_ordem     integer := 0;
-  v_qtd       integer;
+  v_qtd       numeric(12, 3);
   v_proto     text;
   v_id        uuid;
   v_tentativa integer := 0;
@@ -289,10 +295,11 @@ begin
     v_ordem := v_ordem + 1;
     v_qtd := null;
     if nullif(v_item->>'quantidade', '') is not null then
-      v_qtd := greatest(0, (v_item->>'quantidade')::numeric)::integer;
+      v_qtd := round(greatest(0, replace(v_item->>'quantidade', ',', '.')::numeric), 3);
     end if;
-    insert into public.chamado_itens (chamado_id, ordem, sku, produto, quantidade, motivo)
+    insert into public.chamado_itens (chamado_id, ordem, sku, produto, quantidade, unidade, motivo)
     values (v_id, v_ordem, left(nullif(trim(v_item->>'sku'), ''), 60), left(nullif(trim(v_item->>'produto'), ''), 200), v_qtd,
+            case when v_item->>'unidade' = 'kg' then 'kg' else 'un' end,
             left(nullif(trim(v_item->>'motivo'), ''), 120));
   end loop;
 
@@ -340,7 +347,7 @@ as $$
     'loja_nome', c.loja_nome, 'nf', c.nf, 'descricao', c.descricao, 'anexos_qtd', cardinality(c.anexos),
     'criado_em', c.criado_em, 'atualizado_em', c.atualizado_em,
     'itens', coalesce((
-      select jsonb_agg(jsonb_build_object('sku', i.sku, 'produto', i.produto, 'quantidade', i.quantidade, 'motivo', i.motivo,
+      select jsonb_agg(jsonb_build_object('sku', i.sku, 'produto', i.produto, 'quantidade', i.quantidade, 'unidade', i.unidade, 'motivo', i.motivo,
                                           'decisao', i.decisao, 'qtd_aceita', i.qtd_aceita, 'justificativa', i.justificativa)
                        order by i.ordem)
       from public.chamado_itens i where i.chamado_id = c.id

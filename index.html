@@ -166,7 +166,7 @@
 <script src="comum.js"></script>
 <script>
 (function () {
-  const { TIPOS, STATUS, MOTIVOS_ITEM, MAX_ARQUIVO, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, quando, toast, copiar, mensagemErro } = window.SAC;
+  const { TIPOS, STATUS, MOTIVOS_ITEM, fmtQtd, lerQtd, MAX_ARQUIVO, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, quando, toast, copiar, mensagemErro } = window.SAC;
   const cfg = window.SAC_CONFIG || {};
   const sb = window.SAC.cliente();
   let atual = null; // chamado aberto na consulta: {protocolo, whatsapp}
@@ -211,7 +211,10 @@
     d.innerHTML = `<span class="item-n" aria-hidden="true"></span>
       <label class="f c-sku">Código (SKU)<input type="text" data-k="sku" maxlength="60" autocomplete="off" inputmode="numeric" placeholder="Digite o código"></label>
       <label class="f c-desc">Descrição do produto<input type="text" data-k="produto" maxlength="200" autocomplete="off" placeholder="ou comece pelo nome"></label>
-      <label class="f c-qtd">Qtd.<input type="number" data-k="quantidade" min="0" step="1" inputmode="numeric"></label>
+      <div class="f c-qtd"><span>Quantidade</span><div class="qtd-un">
+        <input type="text" data-k="quantidade" inputmode="decimal" autocomplete="off" aria-label="Quantidade">
+        <select data-k="unidade" aria-label="Unidade de medida"><option value="un">un</option><option value="kg">kg</option></select>
+      </div></div>
       <label class="f c-mot">Motivo deste produto<select data-k="motivo"><option value="">Selecione</option>${MOTIVOS_ITEM.map((m) => `<option>${esc(m)}</option>`).join('')}</select></label>
       <button class="item-rem" type="button" aria-label="Remover este produto">×</button>
       <ul class="sugestoes" role="listbox" aria-label="Produtos do catálogo" hidden></ul>`;
@@ -226,7 +229,8 @@
   function lerItens() {
     return Array.from($('itens').querySelectorAll('.item-linha')).map((l) => {
       const val = (k) => l.querySelector(`[data-k="${k}"]`).value.trim();
-      return { sku: val('sku'), produto: val('produto'), quantidade: val('quantidade'), motivo: val('motivo') };
+      const q = lerQtd(val('quantidade'));
+      return { sku: val('sku'), produto: val('produto'), quantidade: q == null || Number.isNaN(q) ? '' : String(q), unidade: val('unidade'), motivo: val('motivo') };
     }).filter((i) => i.sku || i.produto);
   }
   function limparItens() { $('itens').innerHTML = ''; novaLinha(); }
@@ -401,6 +405,17 @@
       $('itens').querySelector('input').focus();
       return;
     }
+    // Quantidade: número com até 3 casas em kg; número inteiro em unidades.
+    const qtdRuim = Array.from($('itens').querySelectorAll('.item-linha')).find((l) => {
+      const q = lerQtd(l.querySelector('[data-k="quantidade"]').value);
+      return q != null && (Number.isNaN(q) || (l.querySelector('[data-k="unidade"]').value === 'un' && !Number.isInteger(q)));
+    });
+    if (qtdRuim) {
+      const kg = qtdRuim.querySelector('[data-k="unidade"]').value === 'kg';
+      $('form-msg').textContent = 'Confira a quantidade do produto ' + qtdRuim.querySelector('.item-n').textContent + (kg ? ': use números, como 2,5.' : ': em unidades, use um número inteiro (ou troque para kg).');
+      qtdRuim.querySelector('[data-k="quantidade"]').focus();
+      return;
+    }
     // Em devolução e avaria, cada produto precisa do seu motivo (a análise é feita por produto).
     if (exigeProduto()) {
       const semMotivo = Array.from($('itens').querySelectorAll('.item-linha')).find((l) =>
@@ -501,7 +516,7 @@
       <div class="desc">${esc(t.descricao)}</div>
       ${(t.itens || []).length ? `<div class="box"><h3>Produtos</h3>
         <ul class="itens-res">${t.itens.map((i) => `<li>
-          <div class="ir-prod"><b class="mono">${esc(i.sku || 'Sem código')}</b> ${esc(i.produto || '')}${i.quantidade != null ? ` <span class="muted">· ${esc(i.quantidade)} un.</span>` : ''}${i.motivo ? `<span class="ir-mot">${esc(i.motivo)}</span>` : ''}</div>
+          <div class="ir-prod"><b class="mono">${esc(i.sku || 'Sem código')}</b> ${esc(i.produto || '')}${i.quantidade != null ? ` <span class="muted">· ${esc(fmtQtd(i.quantidade, i.unidade))}</span>` : ''}${i.motivo ? `<span class="ir-mot">${esc(i.motivo)}</span>` : ''}</div>
           <span class="dec dec-${esc(i.decisao)}">${esc(decisaoTexto(i))}</span>
           ${i.justificativa ? `<div class="ir-just">${esc(i.justificativa)}</div>` : ''}</li>`).join('')}</ul>
       </div>` : ''}

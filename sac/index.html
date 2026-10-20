@@ -1,225 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Central SAC Lojas</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Abra e acompanhe reclamações, devoluções, avarias e dúvidas.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
-<style>
-/* Layout: faixa de cabeçalho com abas; abaixo, uma coluna de trabalho (formulário ou fila) e uma gaveta lateral para o chamado aberto. */
-:root {
-  --bg: #eef2f3;
-  --surface: #ffffff;
-  --surface-2: #f6f8f9;
-  --ink: #12262b;
-  --muted: #56686d;
-  --line: #d6dfe1;
-  --accent: #0b6b6f;
-  --accent-ink: #ffffff;
-  --accent-soft: #dcefee;
-  --stub: #f2b33d;
-  --stub-ink: #2a1d00;
-  --ok: #217a45; --ok-soft: #dff2e6;
-  --warn: #9a5b00; --warn-soft: #fbedd2;
-  --bad: #b3261e; --bad-soft: #fbe2df;
-  --info: #2b55b5; --info-soft: #e2e9fa;
-  --shadow: 0 10px 30px rgba(18, 38, 43, .14);
-  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --f-body: "Source Sans 3", "Segoe UI", Roboto, Arial, sans-serif;
-  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --r: 10px;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0e1719; --surface: #152124; --surface-2: #1a292c; --ink: #e3eeef; --muted: #98abaf; --line: #2a3d41;
-    --accent: #4fc1bf; --accent-ink: #062224; --accent-soft: #163a3b; --stub: #e9a92f;
-    --ok: #6fd39a; --ok-soft: #173826; --warn: #f2bd5c; --warn-soft: #3a2c10; --bad: #ff8f86; --bad-soft: #43201d;
-    --info: #94b2ff; --info-soft: #1d2a4a; --shadow: 0 10px 30px rgba(0, 0, 0, .45);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0e1719; --surface: #152124; --surface-2: #1a292c; --ink: #e3eeef; --muted: #98abaf; --line: #2a3d41;
-  --accent: #4fc1bf; --accent-ink: #062224; --accent-soft: #163a3b; --stub: #e9a92f;
-  --ok: #6fd39a; --ok-soft: #173826; --warn: #f2bd5c; --warn-soft: #3a2c10; --bad: #ff8f86; --bad-soft: #43201d;
-  --info: #94b2ff; --info-soft: #1d2a4a; --shadow: 0 10px 30px rgba(0, 0, 0, .45);
-  color-scheme: dark;
-}
-
-* { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
-h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.2; }
-button, input, select, textarea { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
-.muted { color: var(--muted); }
-
-/* Cabeçalho */
-.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
-.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding-block: 12px; }
-.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.stub { width: 34px; height: 24px; background: var(--stub); border-radius: 4px; position: relative; flex: none;
-  -webkit-mask: radial-gradient(circle 5px at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 5px at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat;
-          mask: radial-gradient(circle 5px at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 5px at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat; }
-.brand-txt { display: flex; flex-direction: column; min-width: 0; }
-.brand-txt b { font-family: var(--f-display); font-weight: 800; font-size: 17px; letter-spacing: -.01em; }
-.brand-txt span { font-size: 12px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tabs { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
-.tab { border: 0; background: transparent; padding: 8px 14px; border-radius: 999px; font-weight: 600; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-.tab:hover { background: var(--surface-2); color: var(--ink); }
-.tab[aria-current="page"] { background: var(--accent); color: var(--accent-ink); }
-.tab .n { font-family: var(--f-mono); font-size: 12px; background: var(--bad); color: var(--surface); border-radius: 999px; padding: 0 6px; }
-
-main { padding-block: 24px 64px; }
-.banner { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--r); background: var(--warn-soft); color: var(--ink); border: 1px solid var(--line); margin-bottom: 18px; }
-.banner b { color: var(--warn); }
-
-/* Formulário */
-.grid-form { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; }
-.card h2 { font-size: 20px; }
-.lead { color: var(--muted); margin: 6px 0 0; max-width: 60ch; }
-fieldset { border: 0; padding: 0; margin: 22px 0 0; min-width: 0; }
-legend { font-family: var(--f-display); font-weight: 700; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; padding: 0; }
-.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
-.fields .full { grid-column: 1 / -1; }
-label.f { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px; min-width: 0; }
-label.f small { font-weight: 400; color: var(--muted); }
-input[type="text"], input[type="tel"], input[type="number"], input[type="search"], select, textarea {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); font-weight: 400; }
-textarea { min-height: 110px; resize: vertical; }
-input:focus, select:focus, textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
-.req { color: var(--bad); }
-.tipos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.tipo { position: relative; }
-.tipo input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
-.tipo span { display: flex; flex-direction: column; gap: 2px; height: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); cursor: pointer; }
-.tipo span b { font-family: var(--f-display); font-size: 15px; }
-.tipo span i { font-style: normal; font-size: 12px; color: var(--muted); }
-.tipo input:checked + span { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
-.tipo input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
-.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 14px; background: var(--surface-2); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
-.thumbs img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); }
-.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 22px; }
-.btn { border: 1px solid var(--line); background: var(--surface); padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink); }
-.btn:hover { border-color: var(--accent); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.btn.primary:hover { filter: brightness(1.08); }
-.btn.small { padding: 6px 10px; font-size: 13px; }
-.btn[disabled] { opacity: .55; cursor: not-allowed; }
-.aside h3 { font-size: 15px; margin-bottom: 8px; }
-.aside ol { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: var(--muted); }
-.aside .sla { margin-top: 18px; display: grid; gap: 6px; }
-.aside .sla div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; font-size: 14px; }
-
-/* Etiqueta de protocolo */
-.ticket { display: grid; grid-template-columns: auto minmax(0, 1fr); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; max-width: 640px; }
-.ticket .left { background: var(--stub); color: var(--stub-ink); padding: 18px; display: flex; align-items: center; font-family: var(--f-display); font-weight: 800; writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: .12em; font-size: 12px; text-transform: uppercase; }
-.ticket .right { padding: 22px; display: grid; gap: 10px; border-left: 2px dashed var(--line); }
-.ticket .code { font-size: clamp(22px, 5vw, 32px); font-weight: 600; letter-spacing: .02em; word-break: break-all; }
-
-/* Painel */
-.head-row { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.head-row h1 { font-size: 26px; }
-.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
-.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 2px; text-align: left; cursor: pointer; }
-.kpi:hover { border-color: var(--accent); }
-.kpi span { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
-.kpi b { font-family: var(--f-display); font-size: 30px; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.kpi.bad b { color: var(--bad); }
-.kpi.warn b { color: var(--warn); }
-.kpi.ok b { color: var(--ok); }
-.filters { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
-.list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
-.row { display: grid; grid-template-columns: 150px minmax(0, 1.6fr) minmax(0, 1.2fr) 140px 130px; gap: 12px; align-items: center; padding: 12px 16px; border: 0; border-top: 1px solid var(--line); background: transparent; width: 100%; text-align: left; cursor: pointer; }
-.row:first-child { border-top: 0; }
-.row:hover { background: var(--surface-2); }
-.row.hd { cursor: default; background: var(--surface-2); font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; padding-block: 8px; }
-.row .loja { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row .sub { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row .cell { min-width: 0; }
-.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; white-space: nowrap; }
-.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.s-novo { background: var(--info-soft); color: var(--info); }
-.s-analise { background: var(--accent-soft); color: var(--accent); }
-.s-aguardando { background: var(--warn-soft); color: var(--warn); }
-.s-aprovado { background: var(--ok-soft); color: var(--ok); }
-.s-resolvido { background: var(--surface-2); color: var(--muted); }
-.s-recusado { background: var(--bad-soft); color: var(--bad); }
-.prazo { font-size: 13px; font-weight: 600; }
-.prazo.bad { color: var(--bad); }
-.prazo.warn { color: var(--warn); }
-.prazo.ok { color: var(--muted); font-weight: 500; }
-.tag { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
-.tag.alta { color: var(--warn); }
-.tag.urgente { color: var(--bad); }
-.empty { padding: 40px 20px; text-align: center; color: var(--muted); display: grid; gap: 6px; justify-items: center; }
-.empty b { font-family: var(--f-display); color: var(--ink); font-size: 17px; }
-
-/* Gaveta */
-.scrim { position: fixed; inset: 0; background: rgba(8, 20, 22, .45); z-index: 20; }
-.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100%); background: var(--surface); z-index: 21; box-shadow: var(--shadow); display: flex; flex-direction: column;
-  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); }
-.dr-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
-.dr-head .code { font-weight: 600; font-size: 17px; }
-.dr-head .x { margin-left: auto; }
-.dr-scroll { overflow-y: auto; padding: 18px; display: grid; gap: 18px; flex: 1; align-content: start; }
-.kv { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 6px 12px; font-size: 14px; }
-.kv dt { color: var(--muted); }
-.kv dd { margin: 0; overflow-wrap: anywhere; }
-.box { border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 10px; }
-.box h3 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.ctrls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.desc { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface-2); border-radius: 8px; padding: 10px 12px; }
-.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
-.photos a { display: block; aspect-ratio: 1; max-width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
-.photos img { width: 100%; height: 100%; object-fit: cover; }
-.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-.timeline li { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 10px; }
-.timeline .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; background: var(--line); }
-.timeline .dot.resposta { background: var(--accent); }
-.timeline .dot.loja { background: var(--stub); }
-.timeline .dot.nota { background: var(--muted); }
-.timeline .meta { font-size: 12px; color: var(--muted); }
-.timeline .txt { white-space: pre-wrap; overflow-wrap: anywhere; }
-.timeline .nota .txt { font-style: italic; }
-.composer { border-top: 1px solid var(--line); padding: 14px 18px; display: grid; gap: 10px; background: var(--surface); }
-.composer textarea { min-height: 70px; }
-.wa { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
-
-/* Equipe */
-.team-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
-.people { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.people li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
-.people li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--accent-ink); flex: none; background: var(--accent); }
-.steps { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
-
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; z-index: 40; font-weight: 600; max-width: calc(100% - 32px); box-shadow: var(--shadow); }
-
-@media (max-width: 900px) {
-  .grid-form, .team-grid { grid-template-columns: minmax(0, 1fr); }
-  .row { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
-  .row.hd { display: none; }
-  .row .c-tipo, .row .c-prazo { grid-column: 1; }
-  .row .c-status { grid-column: 2; grid-row: 1; justify-self: end; }
-  .row .c-prot { grid-column: 2; grid-row: 2; justify-self: end; }
-  .row .c-loja { grid-column: 1; grid-row: 1 / span 2; }
-}
-@media (max-width: 620px) {
-  .tipos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .fields, .ctrls, .filters { grid-template-columns: minmax(0, 1fr); }
-  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .tabs { margin-left: 0; width: 100%; }
-  .kv { grid-template-columns: minmax(0, 1fr); gap: 0 12px; }
-  .kv dd { margin-bottom: 6px; }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .drawer { animation: slide .18s ease-out; }
-  @keyframes slide { from { transform: translateX(24px); opacity: .6; } }
-}
-</style>
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
 
 <header class="top">
   <div class="wrap">
@@ -227,7 +18,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); outline
       <div class="stub" aria-hidden="true"></div>
       <div class="brand-txt"><b>Central SAC</b><span id="empresa-nome">Atendimento às lojas</span></div>
     </div>
-    <nav class="tabs" id="tabs" aria-label="Seções"></nav>
+    <nav class="tabs" aria-label="Seções">
+      <button class="tab" type="button" data-view="novo" aria-current="page">Abrir chamado</button>
+      <button class="tab" type="button" data-view="acompanhar">Acompanhar chamado</button>
+    </nav>
   </div>
 </header>
 
@@ -236,10 +30,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); outline
 
   <!-- Abrir chamado -->
   <section id="v-novo">
-    <div class="grid-form">
+    <div class="grid-form" id="form-area">
       <form class="card" id="form" novalidate>
         <h2>Abrir chamado</h2>
-        <p class="lead">Registre aqui reclamações, devoluções, avarias e dúvidas. Cada chamado recebe um número de protocolo, e você acompanha a resposta na aba <b>Meus chamados</b>.</p>
+        <p class="lead">Registre aqui reclamações, devoluções, avarias e dúvidas. Você recebe um número de protocolo e acompanha a resposta na aba <b>Acompanhar chamado</b>.</p>
 
         <fieldset>
           <legend>Tipo de atendimento</legend>
@@ -249,26 +43,26 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); outline
         <fieldset>
           <legend>Dados da loja</legend>
           <div class="fields">
-            <label class="f full">Nome da loja <span class="req">*</span><input type="text" id="f-loja" autocomplete="organization" required></label>
-            <label class="f">CNPJ<input type="text" id="f-cnpj" inputmode="numeric" placeholder="00.000.000/0000-00"></label>
-            <label class="f">Cidade / UF<input type="text" id="f-cidade" placeholder="Ex.: Campinas / SP"></label>
-            <label class="f">Seu nome <span class="req">*</span><input type="text" id="f-contato" autocomplete="name" required></label>
-            <label class="f">WhatsApp para retorno <span class="req">*</span><input type="tel" id="f-whats" inputmode="tel" placeholder="(11) 98765-4321" required></label>
+            <label class="f full"><span>Nome da loja <span class="req">*</span></span><input type="text" id="f-loja" autocomplete="organization" maxlength="200" required></label>
+            <label class="f">CNPJ<input type="text" id="f-cnpj" inputmode="numeric" maxlength="30" placeholder="00.000.000/0000-00"></label>
+            <label class="f">Cidade / UF<input type="text" id="f-cidade" maxlength="120" placeholder="Ex.: Campinas / SP"></label>
+            <label class="f"><span>Seu nome <span class="req">*</span></span><input type="text" id="f-contato" autocomplete="name" maxlength="120" required></label>
+            <label class="f"><span>WhatsApp para retorno <span class="req">*</span></span><input type="tel" id="f-whats" inputmode="tel" autocomplete="tel" placeholder="(11) 98765-4321" required></label>
           </div>
         </fieldset>
 
         <fieldset>
           <legend>Detalhes</legend>
           <div class="fields">
-            <label class="f">Motivo <span class="req">*</span><select id="f-motivo" required></select></label>
-            <label class="f">Nº da nota fiscal ou pedido<input type="text" id="f-nf"></label>
-            <label class="f">Produto / código (SKU)<input type="text" id="f-produto"></label>
+            <label class="f"><span>Motivo <span class="req">*</span></span><select id="f-motivo" required></select></label>
+            <label class="f">Nº da nota fiscal ou pedido<input type="text" id="f-nf" maxlength="60"></label>
+            <label class="f">Produto / código (SKU)<input type="text" id="f-produto" maxlength="200"></label>
             <label class="f">Quantidade<input type="number" id="f-qtd" min="0" step="1" inputmode="numeric"></label>
-            <label class="f full">Descreva o que aconteceu <span class="req">*</span><textarea id="f-desc" required placeholder="Ex.: Recebemos 3 caixas do pedido 4521; uma veio com a embalagem rasgada e 6 unidades quebradas."></textarea></label>
+            <label class="f full"><span>Descreva o que aconteceu <span class="req">*</span></span><textarea id="f-desc" maxlength="4000" required placeholder="Ex.: Recebemos 3 caixas do pedido 4521; uma veio com a embalagem rasgada e 6 unidades quebradas."></textarea></label>
             <div class="f full">
-              <label class="f" for="f-fotos">Fotos <small id="fotos-hint">Até 6 imagens. Para avaria, fotografe a embalagem e o produto.</small></label>
+              <label class="f" for="f-fotos">Fotos <small>Até 6 imagens de até 8 MB. Para avaria, fotografe a embalagem e o produto.</small></label>
               <div class="drop">
-                <input type="file" id="f-fotos" accept="image/*" multiple>
+                <input type="file" id="f-fotos" accept="image/jpeg,image/png,image/webp,image/heic" multiple>
                 <div class="thumbs" id="thumbs"></div>
               </div>
             </div>
@@ -290,6 +84,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); outline
           <li>Devoluções aprovadas recebem as instruções de coleta ou envio.</li>
         </ol>
         <div class="sla" id="sla-list"></div>
+        <p class="muted" id="sac-fone" hidden></p>
       </aside>
     </div>
 
@@ -302,7 +97,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); outline
           <span class="muted" id="suc-prazo"></span>
           <div class="actions" style="margin-top:4px">
             <button class="btn" type="button" id="suc-copiar">Copiar protocolo</button>
-            <button class="btn" type="button" id="suc-ver">Ver meus chamados</button>
+            <button class="btn" type="button" id="suc-ver">Acompanhar este chamado</button>
             <button class="btn primary" type="button" id="suc-novo">Abrir outro chamado</button>
           </div>
         </div>
@@ -310,623 +105,217 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); outline
     </div>
   </section>
 
-  <!-- Meus chamados -->
-  <section id="v-meus" hidden>
-    <div class="head-row">
-      <div><h1>Meus chamados</h1><p class="lead">Chamados abertos com a sua conta. Toque em um para ver a resposta ou enviar mais informações.</p></div>
-    </div>
-    <div class="list" id="meus-list"></div>
-  </section>
-
-  <!-- Painel da equipe -->
-  <section id="v-painel" hidden>
-    <div class="head-row">
-      <div><h1>Fila de atendimento</h1><p class="lead">Ordenada pelo prazo: os atrasados aparecem primeiro.</p></div>
-      <button class="btn" type="button" id="btn-csv" hidden>Exportar planilha (CSV)</button>
-    </div>
-    <div class="kpis" id="kpis"></div>
-    <div class="filters">
-      <input type="search" id="q" placeholder="Buscar por protocolo, loja, CNPJ, nota ou produto" aria-label="Buscar">
-      <select id="fs" aria-label="Status"></select>
-      <select id="ft" aria-label="Tipo"></select>
-    </div>
-    <div class="list" id="painel-list"></div>
-  </section>
-
-  <!-- Equipe -->
-  <section id="v-equipe" hidden>
-    <div class="head-row"><div><h1>Equipe e configurações</h1><p class="lead">Só você, como dono do app, vê esta aba.</p></div></div>
-    <div class="team-grid">
-      <div class="card" style="display:grid;gap:16px">
-        <label class="f">Nome da empresa (aparece no topo)<input type="text" id="cfg-empresa" placeholder="Ex.: Distribuidora Viamor"></label>
-        <div><button class="btn primary" type="button" id="cfg-salvar">Salvar nome</button></div>
-        <div style="display:grid;gap:8px">
-          <h3 style="font-size:15px">Equipe do SAC</h3>
-          <p class="muted" style="margin:0">Quem está aqui vê a fila completa, muda status e responde às lojas.</p>
-          <ul class="people" id="team-list"></ul>
-          <label class="f">Adicionar pessoa<input type="search" id="team-q" placeholder="Digite o nome de quem tem acesso ao app"></label>
-          <ul class="people" id="team-results"></ul>
-        </div>
+  <!-- Acompanhar -->
+  <section id="v-acompanhar" hidden>
+    <div class="grid-form">
+      <div style="display:grid;gap:18px;min-width:0">
+        <form class="card" id="consulta" novalidate>
+          <h2>Acompanhar chamado</h2>
+          <p class="lead">Informe o protocolo e o WhatsApp usado na abertura.</p>
+          <div class="fields" style="margin-top:16px">
+            <label class="f">Protocolo<input type="text" id="c-proto" class="mono" placeholder="SAC-261020-K7QM" autocapitalize="characters" required></label>
+            <label class="f">WhatsApp<input type="tel" id="c-whats" inputmode="tel" placeholder="(11) 98765-4321" required></label>
+          </div>
+          <div class="actions">
+            <button class="btn primary" type="submit" id="btn-consultar">Consultar</button>
+            <span class="muted" id="c-msg" role="status"></span>
+          </div>
+        </form>
+        <div id="resultado"></div>
       </div>
-      <div class="card">
-        <h3 style="font-size:15px;margin-bottom:10px">Como dar acesso às lojas</h3>
-        <ol class="steps">
-          <li>No menu <b>Compartilhar</b> deste app, convide cada loja pelo e-mail.</li>
-          <li>Escolha um nível que permita editar, para que a loja consiga enviar chamados.</li>
-          <li>A loja precisa entrar com uma conta Claude para usar o formulário.</li>
-          <li>Adicione o pessoal do SAC na lista ao lado para liberar a fila completa.</li>
-        </ol>
-      </div>
+      <aside class="card aside">
+        <h3>Chamados deste aparelho</h3>
+        <div id="recentes"></div>
+      </aside>
     </div>
   </section>
 </main>
 
-<div id="drawer-root" hidden>
-  <div class="scrim" id="scrim"></div>
-  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-code">
-    <div class="dr-head">
-      <span class="code mono" id="dr-code"></span>
-      <button class="btn small" type="button" id="dr-copiar">Copiar</button>
-      <button class="btn small x" type="button" id="dr-fechar" aria-label="Fechar">Fechar</button>
-    </div>
-    <div class="dr-scroll" id="dr-body"></div>
-    <div class="composer" id="dr-composer">
-      <label class="f" for="dr-msg" id="dr-msg-label">Mensagem</label>
-      <textarea id="dr-msg"></textarea>
-      <div class="actions" style="margin-top:0" id="dr-btns"></div>
-      <div class="wa" id="dr-wa"></div>
-    </div>
-  </aside>
-</div>
-
 <div class="toast" id="toast" role="status" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="comum.js"></script>
 <script>
 (function () {
-  const TIPOS = {
-    reclamacao: { rot: 'Reclamação', dica: 'Produto, entrega ou atendimento', sla: 48,
-      motivos: ['Atraso na entrega', 'Qualidade do produto', 'Atendimento', 'Cobrança / boleto', 'Outro'] },
-    devolucao: { rot: 'Devolução / troca', dica: 'Com nota fiscal e motivo', sla: 72,
-      motivos: ['Produto com defeito', 'Produto errado', 'Quantidade divergente', 'Validade próxima', 'Produto parado (encalhe)', 'Outro'] },
-    avaria: { rot: 'Avaria no transporte', dica: 'Chegou danificado', sla: 24,
-      motivos: ['Embalagem danificada', 'Produto quebrado', 'Produto molhado', 'Volume faltando', 'Outro'] },
-    duvida: { rot: 'Dúvida / pedido', dica: 'Boleto, nota, prazo', sla: 24,
-      motivos: ['2ª via de boleto', '2ª via de nota fiscal', 'Status do pedido', 'Prazo de entrega', 'Outro'] }
-  };
-  const STATUS = {
-    novo: 'Novo', analise: 'Em análise', aguardando: 'Aguardando loja',
-    aprovado: 'Aprovado', resolvido: 'Resolvido', recusado: 'Recusado'
-  };
-  const ABERTOS = ['novo', 'analise', 'aguardando', 'aprovado'];
-  const PRIORIDADES = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' };
+  const { TIPOS, STATUS, $, esc, soDigitos, store, prazoDe, prazoInfo, quando, foneBonito, toast, copiar, mensagemErro } = window.SAC;
+  const cfg = window.SAC_CONFIG || {};
+  const sb = window.SAC.cliente();
   const MAX_FOTOS = 6;
+  const MIME_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic' };
+  let atual = null; // chamado aberto na consulta: {protocolo, whatsapp}
 
-  const S = {
-    db: null, user: null, assets: null, downloads: null,
-    myId: null, isOwner: false, canWrite: null, readOnly: false,
-    equipe: [], empresa: '', tickets: [], loaded: false, dbFalhou: false,
-    view: 'novo', viewEscolhida: false, aberto: null, names: {},
-    filtro: { q: '', status: 'abertos', tipo: '' }, ocupado: false
-  };
+  if (cfg.empresa) { $('empresa-nome').textContent = cfg.empresa; document.title = 'SAC · ' + cfg.empresa; }
+  if (cfg.whatsappSac) { $('sac-fone').hidden = false; $('sac-fone').textContent = 'Urgente? Fale com o SAC pelo WhatsApp ' + cfg.whatsappSac + '.'; }
+  if (!sb) { $('banners').innerHTML = window.SAC.configPendente(); $('btn-enviar').disabled = true; $('btn-consultar').disabled = true; }
 
-  const $ = (id) => document.getElementById(id);
-  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const isTeam = () => S.isOwner || (S.myId && S.equipe.includes(S.myId));
-  const store = {
-    get(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sem armazenamento */ } }
-  };
-
-  // ---------- utilidades de tempo ----------
-  function prazoDe(t) { return new Date(new Date(t.criadoEm).getTime() + (TIPOS[t.tipo]?.sla || 48) * 3600e3); }
-  function dur(ms) {
-    const min = Math.round(ms / 60000);
-    if (min < 60) return min + ' min';
-    const h = Math.round(min / 60);
-    if (h < 48) return h + ' h';
-    return Math.round(h / 24) + ' dias';
+  // ---------- abas ----------
+  function irPara(v) {
+    document.querySelectorAll('.tab').forEach((b) => b.toggleAttribute('aria-current', b.dataset.view === v));
+    document.querySelectorAll('.tab[aria-current]').forEach((b) => b.setAttribute('aria-current', 'page'));
+    $('v-novo').hidden = v !== 'novo';
+    $('v-acompanhar').hidden = v !== 'acompanhar';
+    if (v === 'acompanhar') renderRecentes();
+    try { history.replaceState(null, '', v === 'acompanhar' ? '#acompanhar' : location.pathname + location.search); } catch (e) { /* ok */ }
+    window.scrollTo(0, 0);
   }
-  function prazoInfo(t) {
-    if (!ABERTOS.includes(t.status)) return { cls: 'ok', txt: STATUS[t.status] + ' ' + quando(t.atualizadoEm) };
-    const diff = prazoDe(t).getTime() - Date.now();
-    if (diff < 0) return { cls: 'bad', txt: 'Atrasado ' + dur(-diff), atrasado: true };
-    if (diff < 6 * 3600e3) return { cls: 'warn', txt: 'Vence em ' + dur(diff) };
-    return { cls: 'ok', txt: 'Vence em ' + dur(diff) };
-  }
-  const fmtData = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-  function quando(iso) { try { return fmtData.format(new Date(iso)); } catch (e) { return ''; } }
-
-  function gerarProtocolo() {
-    const d = new Date();
-    const p = (n) => String(n).padStart(2, '0');
-    const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let s = '';
-    const r = new Uint32Array(4);
-    crypto.getRandomValues(r);
-    r.forEach((n) => { s += abc[n % abc.length]; });
-    return 'SAC-' + String(d.getFullYear()).slice(2) + p(d.getMonth() + 1) + p(d.getDate()) + '-' + s;
-  }
-  function soDigitos(s) { return String(s || '').replace(/\D/g, ''); }
-  function waNumero(s) {
-    const d = soDigitos(s);
-    if (!d) return '';
-    return (d.length === 10 || d.length === 11) ? '55' + d : d;
-  }
-  function nome(id) { return (id && S.names[id]) || (id === S.myId ? 'Você' : 'Alguém'); }
-
-  function toast(msg) {
-    const el = $('toast');
-    el.textContent = msg;
-    el.hidden = false;
-    clearTimeout(toast.t);
-    toast.t = setTimeout(() => { el.hidden = true; }, 2600);
-  }
-  async function copiar(txt) {
-    try { await navigator.clipboard.writeText(txt); toast('Copiado: ' + txt); }
-    catch (e) { toast('Não deu para copiar. Selecione o número e copie manualmente.'); }
-  }
-
-  // ---------- abas e banners ----------
-  function abas() {
-    const lista = [{ id: 'novo', rot: 'Abrir chamado' }, { id: 'meus', rot: 'Meus chamados' }];
-    if (isTeam()) lista.push({ id: 'painel', rot: 'Fila da equipe', n: S.tickets.filter((t) => ABERTOS.includes(t.status) && prazoInfo(t).atrasado).length });
-    if (S.isOwner) lista.push({ id: 'equipe', rot: 'Equipe' });
-    if (!lista.some((a) => a.id === S.view)) S.view = 'novo';
-    $('tabs').innerHTML = lista.map((a) =>
-      `<button class="tab" type="button" data-view="${a.id}" ${a.id === S.view ? 'aria-current="page"' : ''}>${esc(a.rot)}${a.n ? `<span class="n" aria-label="${a.n} atrasados">${a.n}</span>` : ''}</button>`
-    ).join('');
-    ['novo', 'meus', 'painel', 'equipe'].forEach((v) => { $('v-' + v).hidden = v !== S.view; });
-  }
-  function banners() {
-    let h = '';
-    if (S.dbFalhou) {
-      h = '<div class="banner"><div><b>Sem conexão com o banco de chamados.</b> Abra este app no claude.ai, com sua conta conectada, para enviar e acompanhar chamados.</div></div>';
-    } else if (S.readOnly) {
-      h = '<div class="banner"><div><b>Seu acesso é só de leitura.</b> Peça ao responsável pelo SAC para te convidar com permissão de edição; aí o envio de chamados é liberado.</div></div>';
-    }
-    $('banners').innerHTML = h;
-    $('btn-enviar').disabled = S.dbFalhou || S.readOnly;
-    $('empresa-nome').textContent = S.empresa || 'Atendimento às lojas';
-  }
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => irPara(b.dataset.view)));
 
   // ---------- formulário ----------
-  function montarForm() {
-    $('tipos').innerHTML = Object.entries(TIPOS).map(([k, t], i) =>
-      `<label class="tipo"><input type="radio" name="tipo" value="${k}" ${i === 0 ? 'checked' : ''}><span><b>${esc(t.rot)}</b><i>${esc(t.dica)}</i></span></label>`
-    ).join('');
-    $('sla-list').innerHTML = '<h3>Prazo de primeira resposta</h3>' + Object.values(TIPOS).map((t) =>
-      `<div><span>${esc(t.rot)}</span><b class="mono">${t.sla} h</b></div>`).join('');
-    $('tipos').addEventListener('change', motivos);
-    motivos();
-    const salvo = store.get('sac.loja');
-    if (salvo) {
-      $('f-loja').value = salvo.nome || ''; $('f-cnpj').value = salvo.cnpj || '';
-      $('f-cidade').value = salvo.cidade || ''; $('f-contato').value = salvo.contato || ''; $('f-whats').value = salvo.whatsapp || '';
-    }
-    $('f-fotos').addEventListener('change', () => {
-      const fs = Array.from($('f-fotos').files || []).slice(0, MAX_FOTOS);
-      $('thumbs').innerHTML = '';
-      fs.forEach((f) => { const img = document.createElement('img'); img.alt = f.name; img.src = URL.createObjectURL(f); $('thumbs').appendChild(img); });
-      if (($('f-fotos').files || []).length > MAX_FOTOS) toast('Só as primeiras ' + MAX_FOTOS + ' fotos serão enviadas.');
-    });
-    $('form').addEventListener('submit', enviar);
-    $('suc-copiar').addEventListener('click', () => copiar($('suc-code').textContent));
-    $('suc-ver').addEventListener('click', () => irPara('meus'));
-    $('suc-novo').addEventListener('click', () => { $('sucesso').hidden = true; $('form').closest('.grid-form').hidden = false; window.scrollTo(0, 0); });
-  }
-  function tipoAtual() { return (document.querySelector('input[name="tipo"]:checked') || {}).value || 'reclamacao'; }
+  $('tipos').innerHTML = Object.entries(TIPOS).map(([k, t], i) =>
+    `<label class="tipo"><input type="radio" name="tipo" value="${k}" ${i === 0 ? 'checked' : ''}><span><b>${esc(t.rot)}</b><i>${esc(t.dica)}</i></span></label>`).join('');
+  $('sla-list').innerHTML = '<h3>Prazo de primeira resposta</h3>' + Object.values(TIPOS).map((t) =>
+    `<div><span>${esc(t.rot)}</span><b class="mono">${t.sla} h</b></div>`).join('');
+  const tipoAtual = () => (document.querySelector('input[name="tipo"]:checked') || {}).value || 'reclamacao';
   function motivos() {
     $('f-motivo').innerHTML = '<option value="">Selecione</option>' + TIPOS[tipoAtual()].motivos.map((m) => `<option>${esc(m)}</option>`).join('');
   }
+  $('tipos').addEventListener('change', motivos);
+  motivos();
 
-  async function enviar(e) {
+  const salvo = store.get('sac.loja');
+  if (salvo) {
+    $('f-loja').value = salvo.nome || ''; $('f-cnpj').value = salvo.cnpj || ''; $('f-cidade').value = salvo.cidade || '';
+    $('f-contato').value = salvo.contato || ''; $('f-whats').value = salvo.whatsapp || '';
+  }
+
+  $('f-fotos').addEventListener('change', () => {
+    const todos = Array.from($('f-fotos').files || []);
+    $('thumbs').innerHTML = '';
+    todos.slice(0, MAX_FOTOS).forEach((f) => { const img = document.createElement('img'); img.alt = f.name; img.src = URL.createObjectURL(f); $('thumbs').appendChild(img); });
+    if (todos.length > MAX_FOTOS) toast('Só as primeiras ' + MAX_FOTOS + ' fotos serão enviadas.');
+  });
+
+  $('form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!S.db) return toast('Abra o app no claude.ai para enviar o chamado.');
+    if (!sb) return;
     const v = (id) => $(id).value.trim();
-    const faltando = [['f-loja', 'nome da loja'], ['f-contato', 'seu nome'], ['f-whats', 'WhatsApp'], ['f-motivo', 'motivo'], ['f-desc', 'descrição']]
-      .filter(([id]) => !v(id));
-    if (faltando.length) {
-      $('form-msg').textContent = 'Preencha: ' + faltando.map((f) => f[1]).join(', ') + '.';
-      $(faltando[0][0]).focus();
-      return;
-    }
+    const faltando = [['f-loja', 'nome da loja'], ['f-contato', 'seu nome'], ['f-whats', 'WhatsApp'], ['f-motivo', 'motivo'], ['f-desc', 'descrição']].filter(([id]) => !v(id));
+    if (faltando.length) { $('form-msg').textContent = 'Preencha: ' + faltando.map((f) => f[1]).join(', ') + '.'; $(faltando[0][0]).focus(); return; }
     if (soDigitos(v('f-whats')).length < 10) { $('form-msg').textContent = 'Confira o WhatsApp: use DDD + número.'; $('f-whats').focus(); return; }
 
     const btn = $('btn-enviar');
     btn.disabled = true;
-    const fotos = [];
-    const arquivos = Array.from($('f-fotos').files || []).slice(0, MAX_FOTOS);
     try {
-      if (arquivos.length && S.assets) {
-        for (let i = 0; i < arquivos.length; i++) {
-          $('form-msg').textContent = `Enviando foto ${i + 1} de ${arquivos.length}…`;
-          try {
-            const r = await S.assets.upload(arquivos[i]);
-            fotos.push({ id: r.id, url: r.url });
-          } catch (err) {
-            toast('A foto ' + arquivos[i].name + ' não foi enviada (' + (err && err.code === 'too_large' ? 'arquivo grande demais' : 'erro no envio') + ').');
-          }
-        }
+      const fotos = [];
+      const arquivos = Array.from($('f-fotos').files || []).slice(0, MAX_FOTOS);
+      for (let i = 0; i < arquivos.length; i++) {
+        const f = arquivos[i];
+        const ext = MIME_EXT[f.type];
+        if (!ext) { toast('A foto ' + f.name + ' foi ignorada: use JPG, PNG, WEBP ou HEIC.'); continue; }
+        if (f.size > 8 * 1024 * 1024) { toast('A foto ' + f.name + ' passa de 8 MB e foi ignorada.'); continue; }
+        $('form-msg').textContent = `Enviando foto ${i + 1} de ${arquivos.length}…`;
+        const caminho = 'pendente/' + crypto.randomUUID() + '.' + ext;
+        const { error } = await sb.storage.from('fotos').upload(caminho, f, { contentType: f.type, upsert: false });
+        if (error) toast('A foto ' + f.name + ' não foi enviada: ' + mensagemErro(error));
+        else fotos.push(caminho);
       }
       $('form-msg').textContent = 'Registrando chamado…';
       const tipo = tipoAtual();
-      const agora = new Date().toISOString();
-      const protocolo = gerarProtocolo();
       const loja = { nome: v('f-loja'), cnpj: v('f-cnpj'), cidade: v('f-cidade'), contato: v('f-contato'), whatsapp: v('f-whats') };
-      const doc = {
-        protocolo, tipo, motivo: v('f-motivo'), status: 'novo', prioridade: tipo === 'avaria' ? 'alta' : 'normal',
-        loja, nf: v('f-nf'), produto: v('f-produto'), quantidade: v('f-qtd') ? Number(v('f-qtd')) : null,
-        descricao: v('f-desc'), fotos, criadoPor: S.myId, criadoEm: agora, atualizadoEm: agora, responsavel: null,
-        historico: [{ em: agora, por: S.myId, tipo: 'criado', texto: 'Chamado aberto pela loja' }]
-      };
-      await S.db.collection('chamados').doc(protocolo).set(doc);
+      const { data, error } = await sb.rpc('abrir_chamado', { dados: {
+        tipo, motivo: v('f-motivo'), loja_nome: loja.nome, loja_cnpj: loja.cnpj, loja_cidade: loja.cidade,
+        loja_contato: loja.contato, loja_whatsapp: loja.whatsapp, nf: v('f-nf'), produto: v('f-produto'),
+        quantidade: v('f-qtd'), descricao: v('f-desc'), fotos
+      } });
+      if (error) throw error;
+      const protocolo = data.protocolo;
       store.set('sac.loja', loja);
+      const rec = (store.get('sac.recentes') || []).filter((r) => r.protocolo !== protocolo);
+      rec.unshift({ protocolo, whatsapp: loja.whatsapp, tipo, em: new Date().toISOString() });
+      store.set('sac.recentes', rec.slice(0, 30));
       ['f-nf', 'f-produto', 'f-qtd', 'f-desc'].forEach((id) => { $(id).value = ''; });
-      $('f-fotos').value = ''; $('thumbs').innerHTML = ''; $('f-motivo').value = '';
-      $('form-msg').textContent = '';
+      $('f-fotos').value = ''; $('thumbs').innerHTML = ''; $('f-motivo').value = ''; $('form-msg').textContent = '';
       $('suc-code').textContent = protocolo;
       $('suc-prazo').textContent = 'Primeira resposta em até ' + TIPOS[tipo].sla + ' horas.';
-      $('form').closest('.grid-form').hidden = true;
-      $('sucesso').hidden = false;
+      $('form-area').hidden = true; $('sucesso').hidden = false;
       window.scrollTo(0, 0);
     } catch (err) {
-      erroEscrita(err);
-      $('form-msg').textContent = S.readOnly ? 'Seu acesso não permite enviar chamados.' : 'Não foi possível registrar. Tente de novo em instantes.';
+      $('form-msg').textContent = mensagemErro(err);
     } finally {
-      btn.disabled = S.dbFalhou || S.readOnly;
+      btn.disabled = !sb;
     }
-  }
-
-  function erroEscrita(err) {
-    const code = err && err.code;
-    if (code === 'invalid_argument' || code === 'not_granted' || code === 'revoked') { S.readOnly = true; banners(); }
-    else if (code === 'quota_exceeded') toast('O banco de chamados está cheio. Exporte a planilha e apague chamados antigos.');
-    else toast('Não foi possível salvar agora. Tente de novo.');
-  }
-
-  // ---------- listas ----------
-  function linha(t, comResp) {
-    const p = prazoInfo(t);
-    const pri = t.prioridade && t.prioridade !== 'normal' ? ` <span class="tag ${esc(t.prioridade)}">${esc(PRIORIDADES[t.prioridade])}</span>` : '';
-    return `<button class="row" type="button" data-id="${esc(t.id)}">
-      <span class="cell c-prot mono sub">${esc(t.protocolo || t.id)}</span>
-      <span class="cell c-loja"><span class="loja" style="display:block">${esc(t.loja?.nome || '—')}${pri}</span><span class="sub" style="display:block">${esc(t.loja?.cidade || t.loja?.contato || '')}</span></span>
-      <span class="cell c-tipo"><span style="display:block;font-weight:600">${esc(TIPOS[t.tipo]?.rot || t.tipo)}</span><span class="sub" style="display:block">${esc(t.motivo || '')}${comResp && t.responsavel ? ' · ' + esc(nome(t.responsavel)) : ''}</span></span>
-      <span class="cell c-prazo prazo ${p.cls}">${esc(p.txt)}</span>
-      <span class="cell c-status"><span class="pill s-${esc(t.status)}">${esc(STATUS[t.status] || t.status)}</span></span>
-    </button>`;
-  }
-  const cabecalho = '<div class="row hd" aria-hidden="true"><span>Protocolo</span><span>Loja</span><span>Tipo / motivo</span><span>Prazo</span><span>Status</span></div>';
-
-  function ordenar(a, b) {
-    const aa = ABERTOS.includes(a.status), ab = ABERTOS.includes(b.status);
-    if (aa !== ab) return aa ? -1 : 1;
-    if (aa) return prazoDe(a) - prazoDe(b);
-    return String(b.atualizadoEm).localeCompare(String(a.atualizadoEm));
-  }
-
-  function renderMeus() {
-    const meus = S.tickets.filter((t) => S.myId && t.criadoPor === S.myId).sort(ordenar);
-    if (!S.loaded) { $('meus-list').innerHTML = `<div class="empty"><b>${S.dbFalhou ? 'Chamados indisponíveis' : 'Carregando chamados…'}</b></div>`; return; }
-    $('meus-list').innerHTML = meus.length ? cabecalho + meus.map((t) => linha(t, false)).join('')
-      : '<div class="empty"><b>Você ainda não abriu chamados</b><span>Use a aba Abrir chamado. O protocolo e as respostas aparecem aqui.</span></div>';
-  }
-
-  function filtrados() {
-    const q = S.filtro.q.toLowerCase();
-    const qd = soDigitos(q);
-    return S.tickets.filter((t) => {
-      if (S.filtro.status === 'abertos' && !ABERTOS.includes(t.status)) return false;
-      if (S.filtro.status === 'atrasados' && !(ABERTOS.includes(t.status) && prazoInfo(t).atrasado)) return false;
-      if (STATUS[S.filtro.status] && t.status !== S.filtro.status) return false;
-      if (S.filtro.tipo && t.tipo !== S.filtro.tipo) return false;
-      if (q) {
-        const alvo = [t.protocolo, t.loja?.nome, t.loja?.cidade, t.loja?.contato, t.nf, t.produto, t.motivo].join(' ').toLowerCase();
-        if (!alvo.includes(q) && !(qd.length >= 4 && soDigitos(t.loja?.cnpj).includes(qd))) return false;
-      }
-      return true;
-    }).sort(ordenar);
-  }
-
-  function renderPainel() {
-    const abertos = S.tickets.filter((t) => ABERTOS.includes(t.status));
-    const atrasados = abertos.filter((t) => prazoInfo(t).atrasado).length;
-    const aguard = abertos.filter((t) => t.status === 'aguardando').length;
-    const semana = Date.now() - 7 * 864e5;
-    const resolvidos = S.tickets.filter((t) => t.status === 'resolvido' && new Date(t.atualizadoEm).getTime() >= semana).length;
-    $('kpis').innerHTML = [
-      ['abertos', 'Em aberto', abertos.length, ''],
-      ['atrasados', 'Atrasados', atrasados, atrasados ? 'bad' : ''],
-      ['aguardando', 'Aguardando loja', aguard, aguard ? 'warn' : ''],
-      ['resolvido', 'Resolvidos (7 dias)', resolvidos, 'ok']
-    ].map(([f, r, n, c]) => `<button class="kpi ${c}" type="button" data-filtro="${f}"><span>${r}</span><b>${n}</b></button>`).join('');
-    $('btn-csv').hidden = !S.downloads || !S.tickets.length;
-    if (!S.loaded) { $('painel-list').innerHTML = `<div class="empty"><b>${S.dbFalhou ? 'Fila indisponível' : 'Carregando fila…'}</b></div>`; return; }
-    const lista = filtrados();
-    if (!S.tickets.length) {
-      $('painel-list').innerHTML = '<div class="empty"><b>Nenhum chamado ainda</b><span>Quando uma loja enviar o primeiro pelo formulário, ele aparece aqui com prazo, status e fotos.</span></div>';
-    } else if (!lista.length) {
-      $('painel-list').innerHTML = '<div class="empty"><b>Nada com esses filtros</b><span>Mude o status ou limpe a busca.</span></div>';
-    } else {
-      $('painel-list').innerHTML = cabecalho + lista.map((t) => linha(t, true)).join('');
-    }
-  }
-
-  function montarFiltros() {
-    $('fs').innerHTML = [['abertos', 'Em aberto'], ['atrasados', 'Atrasados'], ['todos', 'Todos os status']].concat(Object.entries(STATUS))
-      .map(([k, r]) => `<option value="${k}">${esc(r)}</option>`).join('');
-    $('ft').innerHTML = '<option value="">Todos os tipos</option>' + Object.entries(TIPOS).map(([k, t]) => `<option value="${k}">${esc(t.rot)}</option>`).join('');
-    $('q').addEventListener('input', () => { S.filtro.q = $('q').value.trim(); renderPainel(); });
-    $('fs').addEventListener('change', () => { S.filtro.status = $('fs').value; renderPainel(); });
-    $('ft').addEventListener('change', () => { S.filtro.tipo = $('ft').value; renderPainel(); });
-    $('kpis').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-filtro]');
-      if (!b) return;
-      S.filtro.status = b.dataset.filtro; $('fs').value = S.filtro.status; renderPainel();
-    });
-    $('btn-csv').addEventListener('click', exportar);
-  }
-
-  // ---------- gaveta do chamado ----------
-  function abrir(id) {
-    S.aberto = id;
-    $('dr-msg').value = '';
-    $('drawer-root').hidden = false;
-    renderGaveta();
-    $('dr-fechar').focus();
-  }
-  function fechar() { S.aberto = null; $('drawer-root').hidden = true; }
-
-  function renderGaveta() {
-    if (!S.aberto) return;
-    const t = S.tickets.find((x) => x.id === S.aberto);
-    if (!t) { fechar(); return; }
-    const equipe = isTeam();
-    const p = prazoInfo(t);
-    $('dr-code').textContent = t.protocolo || t.id;
-    const hist = (t.historico || []).filter((h) => equipe || h.tipo !== 'nota').slice().reverse();
-    const fotos = (t.fotos || []).map((f) => `<a href="${esc(f.url)}" target="_blank" rel="noopener"><img src="${esc(f.url)}" alt="Foto do chamado" loading="lazy"></a>`).join('');
-    const rotHist = { criado: 'Abertura', status: 'Status', resposta: 'Resposta do SAC', loja: 'Mensagem da loja', nota: 'Nota interna', resp: 'Responsável', prioridade: 'Prioridade' };
-    const ctrls = equipe ? `<div class="box"><h3>Atendimento</h3>
-        <div class="ctrls">
-          <label class="f">Status<select id="dr-status">${Object.entries(STATUS).map(([k, r]) => `<option value="${k}" ${k === t.status ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
-          <label class="f">Prioridade<select id="dr-pri">${Object.entries(PRIORIDADES).map(([k, r]) => `<option value="${k}" ${k === (t.prioridade || 'normal') ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
-        </div>
-        <div class="wa"><span>Responsável: <b>${t.responsavel ? esc(nome(t.responsavel)) : 'ninguém ainda'}</b></span>
-          ${t.responsavel !== S.myId ? '<button class="btn small" type="button" id="dr-assumir">Assumir chamado</button>' : ''}</div>
-      </div>` : '';
-    $('dr-body').innerHTML = `
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-        <span class="pill s-${esc(t.status)}">${esc(STATUS[t.status])}</span>
-        <span class="prazo ${p.cls}">${esc(p.txt)}</span>
-        ${t.prioridade && t.prioridade !== 'normal' ? `<span class="tag ${esc(t.prioridade)}">Prioridade ${esc(PRIORIDADES[t.prioridade])}</span>` : ''}
-      </div>
-      ${ctrls}
-      <div class="box"><h3>${esc(TIPOS[t.tipo]?.rot || t.tipo)}</h3>
-        <dl class="kv">
-          <dt>Motivo</dt><dd>${esc(t.motivo || '—')}</dd>
-          <dt>Nota / pedido</dt><dd class="mono">${esc(t.nf || '—')}</dd>
-          <dt>Produto</dt><dd>${esc(t.produto || '—')}${t.quantidade != null ? ' · ' + esc(t.quantidade) + ' un.' : ''}</dd>
-          <dt>Aberto em</dt><dd>${esc(quando(t.criadoEm))}</dd>
-          <dt>Prazo</dt><dd>${esc(quando(prazoDe(t).toISOString()))}</dd>
-        </dl>
-        <div class="desc">${esc(t.descricao || '')}</div>
-        ${fotos ? `<div class="photos">${fotos}</div>` : ''}
-      </div>
-      <div class="box"><h3>Loja</h3>
-        <dl class="kv">
-          <dt>Loja</dt><dd>${esc(t.loja?.nome || '—')}</dd>
-          <dt>CNPJ</dt><dd class="mono">${esc(t.loja?.cnpj || '—')}</dd>
-          <dt>Cidade</dt><dd>${esc(t.loja?.cidade || '—')}</dd>
-          <dt>Contato</dt><dd>${esc(t.loja?.contato || '—')}</dd>
-          <dt>WhatsApp</dt><dd class="mono" style="user-select:all">${esc(t.loja?.whatsapp || '—')}</dd>
-        </dl>
-      </div>
-      <div class="box"><h3>Histórico</h3>
-        <ul class="timeline">${hist.map((h) => `<li class="${esc(h.tipo)}"><span class="dot ${esc(h.tipo)}"></span><div>
-          <div class="meta">${esc(rotHist[h.tipo] || h.tipo)} · ${esc(h.tipo === 'loja' || h.tipo === 'criado' ? (t.loja?.contato || nome(h.por)) : nome(h.por))} · ${esc(quando(h.em))}</div>
-          <div class="txt">${esc(h.texto)}</div></div></li>`).join('')}</ul>
-      </div>`;
-
-    const podeEscrever = !S.readOnly && !!S.db;
-    $('dr-composer').hidden = !podeEscrever || (!equipe && t.criadoPor !== S.myId);
-    $('dr-msg-label').textContent = equipe ? 'Resposta para a loja ou nota interna' : 'Enviar mais informações para o SAC';
-    $('dr-btns').innerHTML = equipe
-      ? '<button class="btn primary" type="button" data-acao="resposta">Registrar resposta à loja</button><button class="btn" type="button" data-acao="nota">Salvar nota interna</button>'
-      : '<button class="btn primary" type="button" data-acao="loja">Enviar mensagem</button>';
-    const num = waNumero(t.loja?.whatsapp);
-    $('dr-wa').innerHTML = equipe && num
-      ? `<span class="muted">Avisar a loja:</span><a class="btn small" id="dr-wa-link" href="https://wa.me/${num}" target="_blank" rel="noopener">Abrir conversa no WhatsApp</a><button class="btn small" type="button" id="dr-wa-copiar">Copiar mensagem</button>`
-      : '';
-  }
-
-  function textoWhats(t, msg) {
-    const corpo = msg || ('O status do seu chamado agora é: ' + STATUS[t.status] + '.');
-    return `Olá, ${t.loja?.contato || ''}! Aqui é o SAC${S.empresa ? ' da ' + S.empresa : ''}.\nChamado ${t.protocolo} (${TIPOS[t.tipo]?.rot || ''}):\n${corpo}`;
-  }
-
-  async function atualizar(t, campos, evento) {
-    if (!S.db || S.ocupado) return false;
-    S.ocupado = true;
-    const agora = new Date().toISOString();
-    const historico = (t.historico || []).concat([{ ...evento, em: agora, por: S.myId }]).slice(-200);
-    try {
-      await S.db.collection('chamados').doc(t.id).update({ ...campos, historico, atualizadoEm: agora });
-      return true;
-    } catch (err) { erroEscrita(err); return false; }
-    finally { S.ocupado = false; }
-  }
-
-  function montarGaveta() {
-    $('scrim').addEventListener('click', fechar);
-    $('dr-fechar').addEventListener('click', fechar);
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.aberto) fechar(); });
-    $('dr-copiar').addEventListener('click', () => copiar($('dr-code').textContent));
-    $('dr-body').addEventListener('change', async (e) => {
-      const t = S.tickets.find((x) => x.id === S.aberto);
-      if (!t) return;
-      if (e.target.id === 'dr-status' && e.target.value !== t.status) {
-        const novo = e.target.value;
-        const ok = await atualizar(t, { status: novo }, { tipo: 'status', texto: STATUS[t.status] + ' → ' + STATUS[novo] });
-        if (ok) toast('Status alterado para ' + STATUS[novo] + '. Avise a loja pelo WhatsApp se precisar.');
-      }
-      if (e.target.id === 'dr-pri' && e.target.value !== (t.prioridade || 'normal')) {
-        await atualizar(t, { prioridade: e.target.value }, { tipo: 'prioridade', texto: 'Prioridade ' + PRIORIDADES[e.target.value] });
-      }
-    });
-    $('dr-body').addEventListener('click', async (e) => {
-      if (e.target.id !== 'dr-assumir') return;
-      const t = S.tickets.find((x) => x.id === S.aberto);
-      if (!t) return;
-      const campos = { responsavel: S.myId };
-      if (t.status === 'novo') campos.status = 'analise';
-      const ok = await atualizar(t, campos, { tipo: 'resp', texto: nome(S.myId) + ' assumiu o chamado' });
-      if (ok) toast('Chamado assumido.');
-    });
-    $('dr-btns').addEventListener('click', async (e) => {
-      const b = e.target.closest('[data-acao]');
-      if (!b) return;
-      const t = S.tickets.find((x) => x.id === S.aberto);
-      const texto = $('dr-msg').value.trim();
-      if (!t) return;
-      if (!texto) { toast('Escreva a mensagem antes de enviar.'); $('dr-msg').focus(); return; }
-      const acao = b.dataset.acao;
-      const campos = {};
-      if (acao === 'loja' && t.status === 'aguardando') campos.status = 'analise';
-      if (acao === 'resposta' && t.status === 'novo') campos.status = 'analise';
-      if (acao === 'resposta' && !t.responsavel) campos.responsavel = S.myId;
-      const ok = await atualizar(t, campos, { tipo: acao, texto });
-      if (ok) {
-        S.ultimaMsg = acao === 'resposta' ? texto : '';
-        $('dr-msg').value = '';
-        toast(acao === 'nota' ? 'Nota interna salva.' : acao === 'resposta' ? 'Resposta registrada. Copie a mensagem para mandar no WhatsApp.' : 'Mensagem enviada ao SAC.');
-      }
-    });
-    $('dr-wa').addEventListener('click', (e) => {
-      const t = S.tickets.find((x) => x.id === S.aberto);
-      if (!t) return;
-      const msg = textoWhats(t, $('dr-msg').value.trim() || S.ultimaMsg);
-      if (e.target.id === 'dr-wa-copiar') copiar(msg);
-      if (e.target.id === 'dr-wa-link') e.target.href = 'https://wa.me/' + waNumero(t.loja?.whatsapp) + '?text=' + encodeURIComponent(msg);
-    });
-  }
-
-  // ---------- exportação ----------
-  async function exportar() {
-    if (!S.downloads) return;
-    const cols = ['Protocolo', 'Tipo', 'Motivo', 'Status', 'Prioridade', 'Loja', 'CNPJ', 'Cidade', 'Contato', 'WhatsApp', 'Nota/Pedido', 'Produto', 'Quantidade', 'Descrição', 'Responsável', 'Aberto em', 'Prazo', 'Atualizado em', 'Atrasado'];
-    const cel = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-    const linhas = filtrados().map((t) => [t.protocolo, TIPOS[t.tipo]?.rot, t.motivo, STATUS[t.status], PRIORIDADES[t.prioridade || 'normal'], t.loja?.nome, t.loja?.cnpj, t.loja?.cidade,
-      t.loja?.contato, t.loja?.whatsapp, t.nf, t.produto, t.quantidade, t.descricao, t.responsavel ? nome(t.responsavel) : '', quando(t.criadoEm),
-      quando(prazoDe(t).toISOString()), quando(t.atualizadoEm), prazoInfo(t).atrasado ? 'Sim' : 'Não'].map(cel).join(';'));
-    const csv = '﻿' + cols.map(cel).join(';') + '\n' + linhas.join('\n');
-    const hoje = new Date().toISOString().slice(0, 10);
-    try { await S.downloads.save({ filename: 'chamados-sac-' + hoje + '.csv', data: csv }); }
-    catch (err) { if (err && err.code !== 'declined') toast('Não foi possível gerar a planilha agora.'); }
-  }
-
-  // ---------- equipe ----------
-  function renderEquipe() {
-    if (!S.isOwner) return;
-    if (document.activeElement !== $('cfg-empresa')) $('cfg-empresa').value = S.empresa;
-    const ids = [S.myId].concat(S.equipe.filter((id) => id !== S.myId)).filter(Boolean);
-    $('team-list').innerHTML = ids.map((id) => `<li><span class="av" aria-hidden="true">${esc((nome(id)[0] || '?').toUpperCase())}</span><span>${esc(nome(id))}${id === S.myId ? ' (dono)' : ''}</span>
-      ${id !== S.myId ? `<button class="btn small" type="button" data-rem="${esc(id)}">Remover</button>` : ''}</li>`).join('');
-  }
-  async function salvarConfig(campos) {
-    if (!S.db) return;
-    try { await S.db.doc('config/geral').set({ empresa: S.empresa, equipe: S.equipe, ...campos }); return true; }
-    catch (err) { erroEscrita(err); return false; }
-  }
-  function montarEquipe() {
-    $('cfg-salvar').addEventListener('click', async () => {
-      if (await salvarConfig({ empresa: $('cfg-empresa').value.trim() })) toast('Nome salvo.');
-    });
-    let busca = 0;
-    const procurar = async () => {
-      if (!S.user || !S.user.search) { $('team-results').innerHTML = '<li><span class="muted">Busca de pessoas indisponível nesta visualização.</span></li>'; return; }
-      const n = ++busca;
-      let r = [];
-      try { r = await S.user.search($('team-q').value.trim()); } catch (e) { r = []; }
-      if (n !== busca) return;
-      const fora = r.filter((p) => p.id && !S.equipe.includes(p.id) && p.id !== S.myId).slice(0, 8);
-      $('team-results').innerHTML = fora.length ? fora.map((p) => `<li><span class="av" aria-hidden="true">${esc(((p.name || '?')[0]).toUpperCase())}</span><span>${esc(p.name || 'Sem nome')}${p.guest ? ' · convidado' : ''}</span>
-        <button class="btn small" type="button" data-add="${esc(p.id)}">Adicionar</button></li>`).join('')
-        : '<li><span class="muted">Ninguém encontrado. A pessoa precisa ter acesso ao app pelo menu Compartilhar.</span></li>';
-    };
-    $('team-q').addEventListener('focus', procurar);
-    $('team-q').addEventListener('input', procurar);
-    document.getElementById('v-equipe').addEventListener('click', async (e) => {
-      const add = e.target.closest('[data-add]'), rem = e.target.closest('[data-rem]');
-      if (add) { if (await salvarConfig({ equipe: S.equipe.concat([add.dataset.add]) })) { toast('Pessoa adicionada à equipe.'); add.closest('li').remove(); } }
-      if (rem) { if (await salvarConfig({ equipe: S.equipe.filter((id) => id !== rem.dataset.rem) })) toast('Pessoa removida da equipe.'); }
-    });
-  }
-
-  // ---------- nomes ----------
-  async function resolverNomes() {
-    if (!S.user || !S.user.profiles) return;
-    const ids = new Set(S.equipe);
-    if (S.myId) ids.add(S.myId);
-    S.tickets.forEach((t) => { if (t.criadoPor) ids.add(t.criadoPor); if (t.responsavel) ids.add(t.responsavel); (t.historico || []).forEach((h) => h.por && ids.add(h.por)); });
-    const lista = Array.from(ids).filter(Boolean);
-    if (!lista.length) return;
-    try {
-      const ps = await S.user.profiles(lista);
-      lista.forEach((id) => { if (ps[id] && ps[id].name) S.names[id] = ps[id].name; });
-      renderDados();
-    } catch (e) { /* nomes ficam genéricos */ }
-  }
-
-  // ---------- render geral ----------
-  function renderDados() {
-    abas(); banners();
-    if (S.view === 'meus') renderMeus();
-    if (S.view === 'painel') renderPainel();
-    if (S.view === 'equipe') renderEquipe();
-    renderGaveta();
-  }
-  function irPara(v) { S.view = v; S.viewEscolhida = true; renderDados(); window.scrollTo(0, 0); }
-
-  document.addEventListener('click', (e) => {
-    const tab = e.target.closest('.tab[data-view]');
-    if (tab) irPara(tab.dataset.view);
-    const row = e.target.closest('.row[data-id]');
-    if (row) abrir(row.dataset.id);
+  });
+  $('suc-copiar').addEventListener('click', () => copiar($('suc-code').textContent));
+  $('suc-novo').addEventListener('click', () => { $('sucesso').hidden = true; $('form-area').hidden = false; window.scrollTo(0, 0); });
+  $('suc-ver').addEventListener('click', () => {
+    $('c-proto').value = $('suc-code').textContent; $('c-whats').value = (store.get('sac.loja') || {}).whatsapp || '';
+    irPara('acompanhar'); consultar();
   });
 
-  async function boot() {
-    montarForm(); montarFiltros(); montarGaveta(); montarEquipe();
-    renderDados();
-    setInterval(() => { if (S.view === 'painel') renderPainel(); if (S.view === 'meus') renderMeus(); abas(); }, 60000);
+  // ---------- consulta ----------
+  function renderRecentes() {
+    const rec = store.get('sac.recentes') || [];
+    $('recentes').innerHTML = rec.length
+      ? '<ul class="people">' + rec.map((r, i) => `<li><span class="mono">${esc(r.protocolo)}</span><button class="btn small" type="button" data-rec="${i}">Ver</button></li>`).join('') + '</ul>'
+      : '<p class="muted" style="margin:0">Os chamados que você abrir neste celular ou computador aparecem aqui para consulta rápida.</p>';
+  }
+  $('recentes').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-rec]');
+    if (!b) return;
+    const r = (store.get('sac.recentes') || [])[Number(b.dataset.rec)];
+    if (!r) return;
+    $('c-proto').value = r.protocolo; $('c-whats').value = r.whatsapp; consultar();
+  });
+  $('consulta').addEventListener('submit', (e) => { e.preventDefault(); consultar(); });
 
-    const usar = (n) => (window.claude && window.claude.use ? window.claude.use(n).catch(() => null) : Promise.resolve(null));
-    const [db, user, assets, downloads] = await Promise.all([usar('db'), usar('user'), usar('assets'), usar('downloads')]);
-    S.db = db; S.user = user; S.assets = assets; S.downloads = downloads;
-    if (!assets) { $('f-fotos').disabled = true; $('fotos-hint').textContent = 'O envio de fotos não está liberado para o seu acesso. Descreva o problema no texto.'; }
-    if (user) {
-      try { S.myId = await user.id(); } catch (e) { S.myId = null; }
-      try { S.isOwner = await user.isOwner(); } catch (e) { S.isOwner = false; }
-      try { S.canWrite = await user.can('data.write'); } catch (e) { S.canWrite = null; }
-      if (S.canWrite === false) S.readOnly = true;
-    }
-    if (!db) { S.dbFalhou = true; renderDados(); return; }
-
-    db.doc('config/geral').onSnapshot((snap) => {
-      const d = (snap.exists && snap.data()) || {};
-      S.empresa = d.empresa || '';
-      S.equipe = Array.isArray(d.equipe) ? d.equipe : [];
-      if (!S.viewEscolhida && isTeam() && S.view === 'novo') S.view = 'painel';
-      renderDados(); resolverNomes();
-    }, () => {});
-
-    db.collection('chamados').orderBy('criadoEm', 'desc').limit(1000).onSnapshot((snap) => {
-      S.tickets = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      S.loaded = true;
-      renderDados(); resolverNomes();
-    }, () => { S.dbFalhou = true; renderDados(); });
+  async function consultar() {
+    if (!sb) return;
+    const protocolo = $('c-proto').value.trim().toUpperCase();
+    const whatsapp = $('c-whats').value.trim();
+    if (!protocolo || soDigitos(whatsapp).length < 10) { $('c-msg').textContent = 'Informe o protocolo e o WhatsApp com DDD.'; return; }
+    $('c-msg').textContent = 'Consultando…';
+    const { data, error } = await sb.rpc('consultar_chamado', { p_protocolo: protocolo, p_whatsapp: whatsapp });
+    if (error) { $('c-msg').textContent = mensagemErro(error); return; }
+    if (!data) { $('c-msg').textContent = 'Não encontramos esse protocolo com esse WhatsApp. Confira os dois.'; $('resultado').innerHTML = ''; atual = null; return; }
+    $('c-msg').textContent = '';
+    atual = { protocolo, whatsapp };
+    renderChamado(data);
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  function renderChamado(t) {
+    const p = prazoInfo(t);
+    const rot = { loja: 'Você', equipe: 'SAC', sistema: 'Atualização' };
+    $('resultado').innerHTML = `<div class="card" style="display:grid;gap:16px">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">
+        <span class="code mono" style="font-weight:600;font-size:18px">${esc(t.protocolo)}</span>
+        <span class="pill s-${esc(t.status)}">${esc(STATUS[t.status] || t.status)}</span>
+      </div>
+      <dl class="kv">
+        <dt>Tipo</dt><dd>${esc(TIPOS[t.tipo]?.rot || t.tipo)} · ${esc(t.motivo)}</dd>
+        <dt>Loja</dt><dd>${esc(t.loja_nome)}</dd>
+        ${t.nf ? `<dt>Nota / pedido</dt><dd class="mono">${esc(t.nf)}</dd>` : ''}
+        <dt>Aberto em</dt><dd>${esc(quando(t.criado_em))}</dd>
+        <dt>Prazo de resposta</dt><dd>${esc(quando(prazoDe(t).toISOString()))} <span class="prazo ${p.cls}">(${esc(p.txt)})</span></dd>
+      </dl>
+      <div class="desc">${esc(t.descricao)}</div>
+      <div class="box"><h3>Conversa</h3>
+        <ul class="timeline">${(t.mensagens || []).slice().reverse().map((m) => `<li><span class="dot ${m.autor === 'equipe' ? 'resposta' : m.autor}"></span><div>
+          <div class="meta">${esc(rot[m.autor] || m.autor)} · ${esc(quando(m.criado_em))}</div><div class="txt">${esc(m.texto)}</div></div></li>`).join('')}</ul>
+      </div>
+      ${['resolvido', 'recusado'].includes(t.status) ? '<p class="muted" style="margin:0">Este chamado foi encerrado. Se o problema continuar, abra um novo chamado citando este protocolo.</p>' : `
+      <div style="display:grid;gap:8px">
+        <label class="f" for="r-msg">Enviar mais informações para o SAC</label>
+        <textarea id="r-msg" maxlength="4000" placeholder="Ex.: Segue o número da nota: 4521."></textarea>
+        <div class="actions" style="margin-top:0"><button class="btn primary" type="button" id="r-enviar">Enviar mensagem</button></div>
+      </div>`}
+    </div>`;
+    const b = $('r-enviar');
+    if (b) b.addEventListener('click', enviarMensagem);
+  }
+
+  async function enviarMensagem() {
+    const texto = ($('r-msg').value || '').trim();
+    if (!texto || !atual) { toast('Escreva a mensagem antes de enviar.'); return; }
+    $('r-enviar').disabled = true;
+    const { data, error } = await sb.rpc('mensagem_loja', { p_protocolo: atual.protocolo, p_whatsapp: atual.whatsapp, p_texto: texto });
+    if (error || !data) { toast(error ? mensagemErro(error) : 'Chamado não encontrado.'); $('r-enviar').disabled = false; return; }
+    toast('Mensagem enviada ao SAC.');
+    consultar();
+  }
+
+  if (location.hash === '#acompanhar') irPara('acompanhar');
 })();
 </script>
+</body>
+</html>

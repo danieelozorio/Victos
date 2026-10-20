@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Painel SAC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="stub" aria-hidden="true"></div>
+      <div class="brand-txt"><b>Painel SAC</b><span id="empresa-nome">Equipe de atendimento</span></div>
+    </div>
+    <nav class="tabs" id="tabs" aria-label="Seções" hidden>
+      <button class="tab" type="button" data-view="fila" aria-current="page">Fila <span class="n" id="n-atrasados" hidden></span></button>
+      <button class="tab" type="button" data-view="link">Link para as lojas</button>
+      <button class="tab" type="button" id="sair">Sair</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="banners"></div>
+
+  <!-- Login -->
+  <section id="v-login" hidden>
+    <form class="card" id="login" novalidate style="max-width:420px;margin:24px auto;display:grid;gap:14px">
+      <h2>Entrar no painel</h2>
+      <p class="lead" style="margin:0">Acesso só para a equipe do SAC. As lojas usam a página pública de chamados.</p>
+      <label class="f">E-mail<input type="text" id="l-email" inputmode="email" autocomplete="username" required></label>
+      <label class="f">Senha<input type="password" id="l-senha" autocomplete="current-password" required></label>
+      <div class="actions" style="margin-top:0"><button class="btn primary" type="submit" id="l-btn">Entrar</button><span class="muted" id="l-msg" role="status"></span></div>
+    </form>
+  </section>
+
+  <!-- Sem permissão -->
+  <section id="v-negado" hidden>
+    <div class="card" style="max-width:520px;margin:24px auto;display:grid;gap:10px">
+      <h2>Seu usuário ainda não está na equipe</h2>
+      <p class="lead" style="margin:0">Você entrou como <b id="negado-email"></b>, mas esse usuário não foi liberado para ver a fila. Peça ao responsável para cadastrar você na tabela <span class="mono">equipe</span> do Supabase.</p>
+      <div><button class="btn" type="button" id="negado-sair">Sair</button></div>
+    </div>
+  </section>
+
+  <!-- Fila -->
+  <section id="v-fila" hidden>
+    <div class="head-row">
+      <div><h1>Fila de atendimento</h1><p class="lead">Ordenada pelo prazo: os atrasados aparecem primeiro. Atualiza sozinha quando chega chamado novo.</p></div>
+      <button class="btn" type="button" id="btn-csv">Exportar planilha (CSV)</button>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="filters">
+      <input type="search" id="q" placeholder="Buscar por protocolo, loja, CNPJ, nota ou produto" aria-label="Buscar">
+      <select id="fs" aria-label="Status"></select>
+      <select id="ft" aria-label="Tipo"></select>
+    </div>
+    <div class="list" id="lista"></div>
+  </section>
+
+  <!-- Link para lojas -->
+  <section id="v-link" hidden>
+    <div class="head-row"><div><h1>Link para as lojas</h1><p class="lead">Mande este link no WhatsApp das lojas ou imprima o QR code e cole no balcão. Elas não precisam de login.</p></div></div>
+    <div class="team-grid">
+      <div class="card" style="display:grid;gap:14px;justify-items:start">
+        <span class="mono" id="link-loja" style="user-select:all;overflow-wrap:anywhere;font-size:15px"></span>
+        <div class="actions" style="margin-top:0">
+          <button class="btn primary" type="button" id="link-copiar">Copiar link</button>
+          <button class="btn" type="button" id="link-msg">Copiar mensagem para as lojas</button>
+        </div>
+        <div id="qr" style="background:#fff;padding:12px;border-radius:8px"></div>
+      </div>
+      <div class="card" style="display:grid;gap:10px">
+        <h3 style="font-size:15px">Equipe com acesso ao painel</h3>
+        <ul class="people" id="equipe-lista"></ul>
+        <p class="muted" style="margin:0">Para incluir alguém: crie o usuário em Supabase &gt; Authentication &gt; Users e rode o comando de cadastro que está no final do arquivo <span class="mono">supabase.sql</span>.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="drawer-root" hidden>
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-code">
+    <div class="dr-head">
+      <span class="code mono" id="dr-code"></span>
+      <button class="btn small" type="button" id="dr-copiar">Copiar</button>
+      <button class="btn small x" type="button" id="dr-fechar">Fechar</button>
+    </div>
+    <div class="dr-scroll" id="dr-body"></div>
+    <div class="composer">
+      <label class="f" for="dr-msg">Resposta para a loja ou nota interna</label>
+      <textarea id="dr-msg" maxlength="4000"></textarea>
+      <div class="actions" style="margin-top:0">
+        <button class="btn primary" type="button" data-acao="resposta">Registrar resposta à loja</button>
+        <button class="btn" type="button" data-acao="nota">Salvar nota interna</button>
+      </div>
+      <div class="wa" id="dr-wa"></div>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="config.js"></script>
+<script src="comum.js"></script>
+<script>
+(function () {
+  const { TIPOS, STATUS, ABERTOS, PRIORIDADES, $, esc, soDigitos, prazoDe, prazoInfo, quando, waNumero, foneBonito, toast, copiar, mensagemErro } = window.SAC;
+  const cfg = window.SAC_CONFIG || {};
+  const sb = window.SAC.cliente();
+  const S = { uid: null, email: '', tickets: [], equipe: {}, view: 'fila', aberto: null, msgs: [], fotos: [], filtro: { q: '', status: 'abertos', tipo: '' }, ocupado: false, canal: null, ultimaResposta: '' };
+  const linkLoja = new URL('./', location.href).href;
+
+  if (cfg.empresa) $('empresa-nome').textContent = cfg.empresa;
+  if (!sb) { $('banners').innerHTML = window.SAC.configPendente(); return; }
+
+  function mostrar(sec) {
+    ['login', 'negado', 'fila', 'link'].forEach((v) => { $('v-' + v).hidden = v !== sec; });
+    $('tabs').hidden = !(sec === 'fila' || sec === 'link');
+    document.querySelectorAll('.tab[data-view]').forEach((b) => {
+      if (b.dataset.view === sec) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+  }
+
+  // ---------- login ----------
+  $('login').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('l-email').value.trim(), password = $('l-senha').value;
+    if (!email || !password) { $('l-msg').textContent = 'Informe e-mail e senha.'; return; }
+    $('l-btn').disabled = true; $('l-msg').textContent = 'Entrando…';
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    $('l-btn').disabled = false;
+    $('l-msg').textContent = error ? mensagemErro(error) : '';
+  });
+  async function sair() { if (S.canal) { sb.removeChannel(S.canal); S.canal = null; } await sb.auth.signOut(); }
+  $('sair').addEventListener('click', sair);
+  $('negado-sair').addEventListener('click', sair);
+
+  let iniciado; // undefined até a primeira resposta, para a tela de login aparecer
+  sb.auth.onAuthStateChange((_ev, session) => {
+    const uid = session?.user?.id || null;
+    if (uid === iniciado) return;
+    iniciado = uid;
+    // Fora do callback para não travar o cliente de autenticação.
+    setTimeout(() => entrou(session), 0);
+  });
+
+  async function entrou(session) {
+    if (!session) { S.uid = null; S.tickets = []; fechar(); mostrar('login'); return; }
+    S.uid = session.user.id; S.email = session.user.email || '';
+    const { data: ok, error } = await sb.rpc('eh_equipe');
+    if (error) { $('banners').innerHTML = `<div class="banner"><div><b>Não foi possível verificar seu acesso.</b> ${esc(mensagemErro(error))}</div></div>`; return; }
+    if (!ok) { $('negado-email').textContent = S.email; mostrar('negado'); return; }
+    $('banners').innerHTML = '';
+    mostrar(S.view);
+    await Promise.all([carregarEquipe(), carregar()]);
+    assinar();
+  }
+
+  // ---------- dados ----------
+  async function carregarEquipe() {
+    const { data } = await sb.from('equipe').select('user_id, nome').order('nome');
+    S.equipe = {};
+    (data || []).forEach((p) => { S.equipe[p.user_id] = p.nome; });
+    $('equipe-lista').innerHTML = (data || []).map((p) => `<li><span class="av" aria-hidden="true">${esc((p.nome[0] || '?').toUpperCase())}</span><span>${esc(p.nome)}${p.user_id === S.uid ? ' (você)' : ''}</span></li>`).join('');
+  }
+  async function carregar() {
+    const { data, error } = await sb.from('chamados').select('*').order('criado_em', { ascending: false }).limit(1000);
+    if (error) { toast(mensagemErro(error)); return; }
+    S.tickets = data || [];
+    renderFila();
+    if (S.aberto) renderGaveta();
+  }
+  let recarga = null;
+  function agendarRecarga() { clearTimeout(recarga); recarga = setTimeout(carregar, 400); }
+  function assinar() {
+    if (S.canal) return;
+    S.canal = sb.channel('fila-sac')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chamados' }, agendarRecarga)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensagens' }, (p) => {
+        if (S.aberto && p.new && p.new.chamado_id === S.aberto) carregarMensagens();
+      })
+      .subscribe();
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && S.uid) carregar(); });
+  setInterval(() => { if (S.uid) renderFila(); }, 60000);
+  setInterval(() => { if (S.uid && !document.hidden) carregar(); }, 5 * 60000);
+
+  const nome = (id) => (id && S.equipe[id]) || (id === S.uid ? 'Você' : 'Equipe');
+
+  // ---------- fila ----------
+  function ordenar(a, b) {
+    const aa = ABERTOS.includes(a.status), ab = ABERTOS.includes(b.status);
+    if (aa !== ab) return aa ? -1 : 1;
+    if (aa) return prazoDe(a) - prazoDe(b);
+    return String(b.atualizado_em).localeCompare(String(a.atualizado_em));
+  }
+  function filtrados() {
+    const q = S.filtro.q.toLowerCase(), qd = soDigitos(q);
+    return S.tickets.filter((t) => {
+      if (S.filtro.status === 'abertos' && !ABERTOS.includes(t.status)) return false;
+      if (S.filtro.status === 'atrasados' && !(ABERTOS.includes(t.status) && prazoInfo(t).atrasado)) return false;
+      if (STATUS[S.filtro.status] && t.status !== S.filtro.status) return false;
+      if (S.filtro.tipo && t.tipo !== S.filtro.tipo) return false;
+      if (q) {
+        const alvo = [t.protocolo, t.loja_nome, t.loja_cidade, t.loja_contato, t.nf, t.produto, t.motivo].join(' ').toLowerCase();
+        if (!alvo.includes(q) && !(qd.length >= 4 && (soDigitos(t.loja_cnpj).includes(qd) || t.loja_whatsapp.includes(qd)))) return false;
+      }
+      return true;
+    }).sort(ordenar);
+  }
+  const cabecalho = '<div class="row hd" aria-hidden="true"><span>Protocolo</span><span>Loja</span><span>Tipo / motivo</span><span>Prazo</span><span>Status</span></div>';
+  function linha(t) {
+    const p = prazoInfo(t);
+    const pri = t.prioridade !== 'normal' ? ` <span class="tag ${esc(t.prioridade)}">${esc(PRIORIDADES[t.prioridade])}</span>` : '';
+    return `<button class="row" type="button" data-id="${esc(t.id)}">
+      <span class="cell c-prot mono sub">${esc(t.protocolo)}</span>
+      <span class="cell c-loja"><span class="loja" style="display:block">${esc(t.loja_nome)}${pri}</span><span class="sub" style="display:block">${esc(t.loja_cidade || t.loja_contato)}</span></span>
+      <span class="cell c-tipo"><span style="display:block;font-weight:600">${esc(TIPOS[t.tipo]?.rot || t.tipo)}</span><span class="sub" style="display:block">${esc(t.motivo)}${t.responsavel ? ' · ' + esc(nome(t.responsavel)) : ''}</span></span>
+      <span class="cell c-prazo prazo ${p.cls}">${esc(p.txt)}</span>
+      <span class="cell c-status"><span class="pill s-${esc(t.status)}">${esc(STATUS[t.status])}</span></span>
+    </button>`;
+  }
+  function renderFila() {
+    const abertos = S.tickets.filter((t) => ABERTOS.includes(t.status));
+    const atrasados = abertos.filter((t) => prazoInfo(t).atrasado).length;
+    const aguard = abertos.filter((t) => t.status === 'aguardando').length;
+    const semana = Date.now() - 7 * 864e5;
+    const resolvidos = S.tickets.filter((t) => t.status === 'resolvido' && new Date(t.atualizado_em).getTime() >= semana).length;
+    $('n-atrasados').hidden = !atrasados; $('n-atrasados').textContent = atrasados;
+    $('kpis').innerHTML = [
+      ['abertos', 'Em aberto', abertos.length, ''], ['atrasados', 'Atrasados', atrasados, atrasados ? 'bad' : ''],
+      ['aguardando', 'Aguardando loja', aguard, aguard ? 'warn' : ''], ['resolvido', 'Resolvidos (7 dias)', resolvidos, 'ok']
+    ].map(([f, r, n, c]) => `<button class="kpi ${c}" type="button" data-filtro="${f}"><span>${r}</span><b>${n}</b></button>`).join('');
+    const lista = filtrados();
+    $('lista').innerHTML = !S.tickets.length
+      ? '<div class="empty"><b>Nenhum chamado ainda</b><span>Mande o link da aba "Link para as lojas". Quando a primeira loja enviar, o chamado aparece aqui na hora.</span></div>'
+      : !lista.length ? '<div class="empty"><b>Nada com esses filtros</b><span>Mude o status ou limpe a busca.</span></div>'
+      : cabecalho + lista.map(linha).join('');
+  }
+  $('fs').innerHTML = [['abertos', 'Em aberto'], ['atrasados', 'Atrasados'], ['todos', 'Todos os status']].concat(Object.entries(STATUS))
+    .map(([k, r]) => `<option value="${k}">${esc(r)}</option>`).join('');
+  $('ft').innerHTML = '<option value="">Todos os tipos</option>' + Object.entries(TIPOS).map(([k, t]) => `<option value="${k}">${esc(t.rot)}</option>`).join('');
+  $('q').addEventListener('input', () => { S.filtro.q = $('q').value.trim(); renderFila(); });
+  $('fs').addEventListener('change', () => { S.filtro.status = $('fs').value; renderFila(); });
+  $('ft').addEventListener('change', () => { S.filtro.tipo = $('ft').value; renderFila(); });
+  $('kpis').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-filtro]');
+    if (b) { S.filtro.status = b.dataset.filtro; $('fs').value = S.filtro.status; renderFila(); }
+  });
+  $('lista').addEventListener('click', (e) => { const r = e.target.closest('.row[data-id]'); if (r) abrir(r.dataset.id); });
+  document.querySelectorAll('.tab[data-view]').forEach((b) => b.addEventListener('click', () => { S.view = b.dataset.view; mostrar(S.view); window.scrollTo(0, 0); }));
+
+  // ---------- gaveta ----------
+  async function abrir(id) {
+    S.aberto = id; S.msgs = []; S.fotos = []; S.ultimaResposta = '';
+    $('dr-msg').value = '';
+    $('drawer-root').hidden = false;
+    renderGaveta();
+    $('dr-fechar').focus();
+    const t = S.tickets.find((x) => x.id === id);
+    await carregarMensagens();
+    if (t && t.fotos && t.fotos.length) {
+      const { data } = await sb.storage.from('fotos').createSignedUrls(t.fotos, 3600);
+      if (S.aberto === id) { S.fotos = (data || []).filter((f) => f.signedUrl).map((f) => f.signedUrl); renderGaveta(); }
+    }
+  }
+  async function carregarMensagens() {
+    const id = S.aberto;
+    if (!id) return;
+    const { data } = await sb.from('mensagens').select('*').eq('chamado_id', id).order('criado_em');
+    if (S.aberto === id) { S.msgs = data || []; renderGaveta(); }
+  }
+  function fechar() { S.aberto = null; $('drawer-root').hidden = true; }
+  $('scrim').addEventListener('click', fechar);
+  $('dr-fechar').addEventListener('click', fechar);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.aberto) fechar(); });
+  $('dr-copiar').addEventListener('click', () => copiar($('dr-code').textContent));
+
+  function renderGaveta() {
+    const t = S.tickets.find((x) => x.id === S.aberto);
+    if (!t) return;
+    const p = prazoInfo(t);
+    $('dr-code').textContent = t.protocolo;
+    const quem = (m) => m.autor === 'loja' ? t.loja_contato + ' (loja)' : m.autor === 'sistema' && !m.autor_id ? 'Sistema' : nome(m.autor_id);
+    const tipoMsg = (m) => m.interna ? 'nota' : m.autor === 'equipe' ? 'resposta' : m.autor;
+    const rotMsg = { nota: 'Nota interna', resposta: 'Resposta à loja', loja: 'Mensagem da loja', sistema: 'Atualização' };
+    $('dr-body').innerHTML = `
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+        <span class="pill s-${esc(t.status)}">${esc(STATUS[t.status])}</span>
+        <span class="prazo ${p.cls}">${esc(p.txt)}</span>
+      </div>
+      <div class="box"><h3>Atendimento</h3>
+        <div class="ctrls">
+          <label class="f">Status<select id="dr-status">${Object.entries(STATUS).map(([k, r]) => `<option value="${k}" ${k === t.status ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
+          <label class="f">Prioridade<select id="dr-pri">${Object.entries(PRIORIDADES).map(([k, r]) => `<option value="${k}" ${k === t.prioridade ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
+        </div>
+        <div class="wa"><span>Responsável: <b>${t.responsavel ? esc(nome(t.responsavel)) : 'ninguém ainda'}</b></span>
+          ${t.responsavel !== S.uid ? '<button class="btn small" type="button" id="dr-assumir">Assumir chamado</button>' : ''}</div>
+      </div>
+      <div class="box"><h3>${esc(TIPOS[t.tipo]?.rot || t.tipo)}</h3>
+        <dl class="kv">
+          <dt>Motivo</dt><dd>${esc(t.motivo)}</dd>
+          <dt>Nota / pedido</dt><dd class="mono">${esc(t.nf || '—')}</dd>
+          <dt>Produto</dt><dd>${esc(t.produto || '—')}${t.quantidade != null ? ' · ' + esc(t.quantidade) + ' un.' : ''}</dd>
+          <dt>Aberto em</dt><dd>${esc(quando(t.criado_em))}</dd>
+          <dt>Prazo</dt><dd>${esc(quando(prazoDe(t).toISOString()))}</dd>
+        </dl>
+        <div class="desc">${esc(t.descricao)}</div>
+        ${t.fotos && t.fotos.length ? (S.fotos.length ? `<div class="photos">${S.fotos.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Foto enviada pela loja" loading="lazy"></a>`).join('')}</div>` : `<p class="muted" style="margin:0">Carregando ${t.fotos.length} foto(s)…</p>`) : ''}
+      </div>
+      <div class="box"><h3>Loja</h3>
+        <dl class="kv">
+          <dt>Loja</dt><dd>${esc(t.loja_nome)}</dd>
+          <dt>CNPJ</dt><dd class="mono">${esc(t.loja_cnpj || '—')}</dd>
+          <dt>Cidade</dt><dd>${esc(t.loja_cidade || '—')}</dd>
+          <dt>Contato</dt><dd>${esc(t.loja_contato)}</dd>
+          <dt>WhatsApp</dt><dd class="mono" style="user-select:all">${esc(foneBonito(t.loja_whatsapp))}</dd>
+        </dl>
+      </div>
+      <div class="box"><h3>Histórico</h3>
+        <ul class="timeline">${S.msgs.slice().reverse().map((m) => `<li class="${tipoMsg(m)}"><span class="dot ${tipoMsg(m)}"></span><div>
+          <div class="meta">${esc(rotMsg[tipoMsg(m)] || '')} · ${esc(quem(m))} · ${esc(quando(m.criado_em))}</div>
+          <div class="txt">${esc(m.texto)}</div></div></li>`).join('') || '<li><span></span><span class="muted">Carregando…</span></li>'}</ul>
+      </div>`;
+    $('dr-wa').innerHTML = `<span class="muted">Avisar a loja:</span><a class="btn small" id="dr-wa-link" href="https://wa.me/${waNumero(t.loja_whatsapp)}" target="_blank" rel="noopener">Abrir conversa no WhatsApp</a><button class="btn small" type="button" id="dr-wa-copiar">Copiar mensagem</button>`;
+  }
+
+  async function registrar(t, campos, msg) {
+    if (S.ocupado) return false;
+    S.ocupado = true;
+    try {
+      if (campos && Object.keys(campos).length) {
+        const { error } = await sb.from('chamados').update(campos).eq('id', t.id);
+        if (error) throw error;
+        Object.assign(t, campos);
+      }
+      if (msg) {
+        const { error } = await sb.from('mensagens').insert({ chamado_id: t.id, autor_id: S.uid, interna: false, ...msg });
+        if (error) throw error;
+      }
+      renderFila(); renderGaveta(); carregarMensagens();
+      return true;
+    } catch (err) { toast(mensagemErro(err)); renderGaveta(); return false; }
+    finally { S.ocupado = false; }
+  }
+
+  $('dr-body').addEventListener('change', async (e) => {
+    const t = S.tickets.find((x) => x.id === S.aberto);
+    if (!t) return;
+    if (e.target.id === 'dr-status' && e.target.value !== t.status) {
+      const de = t.status, para = e.target.value;
+      if (await registrar(t, { status: para }, { autor: 'sistema', texto: 'Status: ' + STATUS[de] + ' → ' + STATUS[para] }))
+        toast('Status alterado para ' + STATUS[para] + '. Avise a loja pelo WhatsApp se precisar.');
+    }
+    if (e.target.id === 'dr-pri' && e.target.value !== t.prioridade) {
+      await registrar(t, { prioridade: e.target.value }, { autor: 'sistema', interna: true, texto: 'Prioridade alterada para ' + PRIORIDADES[e.target.value] });
+    }
+  });
+  $('dr-body').addEventListener('click', async (e) => {
+    if (e.target.id !== 'dr-assumir') return;
+    const t = S.tickets.find((x) => x.id === S.aberto);
+    if (!t) return;
+    const campos = { responsavel: S.uid };
+    if (t.status === 'novo') campos.status = 'analise';
+    if (await registrar(t, campos, { autor: 'sistema', interna: true, texto: nome(S.uid) + ' assumiu o chamado' })) toast('Chamado assumido.');
+  });
+  document.querySelector('.composer').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-acao]');
+    const t = S.tickets.find((x) => x.id === S.aberto);
+    if (!t) return;
+    if (b) {
+      const texto = $('dr-msg').value.trim();
+      if (!texto) { toast('Escreva a mensagem antes de salvar.'); $('dr-msg').focus(); return; }
+      const nota = b.dataset.acao === 'nota';
+      const campos = {};
+      if (!nota && t.status === 'novo') campos.status = 'analise';
+      if (!nota && !t.responsavel) campos.responsavel = S.uid;
+      if (await registrar(t, campos, { autor: 'equipe', interna: nota, texto })) {
+        if (!nota) S.ultimaResposta = texto;
+        $('dr-msg').value = '';
+        toast(nota ? 'Nota interna salva.' : 'Resposta registrada. A loja já vê na consulta; avise pelo WhatsApp.');
+      }
+      return;
+    }
+    const msg = textoWhats(t, $('dr-msg').value.trim() || S.ultimaResposta);
+    if (e.target.id === 'dr-wa-copiar') copiar(msg);
+    if (e.target.id === 'dr-wa-link') e.target.href = 'https://wa.me/' + waNumero(t.loja_whatsapp) + '?text=' + encodeURIComponent(msg);
+  });
+  function textoWhats(t, corpo) {
+    return `Olá, ${t.loja_contato}! Aqui é o SAC${cfg.empresa ? ' da ' + cfg.empresa : ''}.\nChamado ${t.protocolo} (${TIPOS[t.tipo]?.rot || ''}):\n` +
+      (corpo || 'O status agora é: ' + STATUS[t.status] + '.') + `\n\nAcompanhe em: ${linkLoja}#acompanhar`;
+  }
+
+  // ---------- exportação ----------
+  $('btn-csv').addEventListener('click', () => {
+    const cols = ['Protocolo', 'Tipo', 'Motivo', 'Status', 'Prioridade', 'Loja', 'CNPJ', 'Cidade', 'Contato', 'WhatsApp', 'Nota/Pedido', 'Produto', 'Quantidade', 'Descrição', 'Responsável', 'Aberto em', 'Prazo', 'Atualizado em', 'Atrasado'];
+    const cel = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const linhas = filtrados().map((t) => [t.protocolo, TIPOS[t.tipo]?.rot, t.motivo, STATUS[t.status], PRIORIDADES[t.prioridade], t.loja_nome, t.loja_cnpj, t.loja_cidade,
+      t.loja_contato, foneBonito(t.loja_whatsapp), t.nf, t.produto, t.quantidade, t.descricao, t.responsavel ? nome(t.responsavel) : '', quando(t.criado_em),
+      quando(prazoDe(t).toISOString()), quando(t.atualizado_em), prazoInfo(t).atrasado ? 'Sim' : 'Não'].map(cel).join(';'));
+    const blob = new Blob(['﻿' + cols.map(cel).join(';') + '\n' + linhas.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'chamados-sac-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+
+  // ---------- link e QR ----------
+  $('link-loja').textContent = linkLoja;
+  $('link-copiar').addEventListener('click', () => copiar(linkLoja));
+  $('link-msg').addEventListener('click', () => copiar(
+    `Olá! A partir de agora, reclamações, devoluções, avarias e dúvidas são abertas por este link: ${linkLoja}\n` +
+    'Você recebe um número de protocolo e acompanha a resposta pelo mesmo endereço. Não precisa de cadastro.'));
+  if (window.QRCode) new QRCode($('qr'), { text: linkLoja, width: 200, height: 200, colorDark: '#12262b', colorLight: '#ffffff' });
+})();
+</script>
+</body>
+</html>

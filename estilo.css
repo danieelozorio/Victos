@@ -100,9 +100,17 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); outline
 .tipo span i { font-style: normal; font-size: 12px; color: var(--muted); }
 .tipo input:checked + span { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
 .tipo input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
-.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 14px; background: var(--surface-2); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 14px; background: var(--surface-2); display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
 .thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
-.thumbs img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); }
+.thumbs:empty { display: none; }
+.thumb { position: relative; width: 72px; height: 72px; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); display: block; }
+.thumb button { position: absolute; top: -8px; right: -8px; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--surface); background: var(--ink); color: var(--surface); font-size: 16px; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.foto-btns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; width: 100%; }
+.oculto { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+.drop { position: relative; }
+#fotos-cont:empty { display: none; }
+@media (max-width: 620px) { .foto-btns .btn { flex: 1 1 100%; justify-content: center; padding-block: 12px; } #fotos-cont { flex-basis: 100%; } }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 22px; }
 .btn { border: 1px solid var(--line); background: var(--surface); padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink); }
 .btn:hover { border-color: var(--accent); }
@@ -232,3 +240,5 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); outline
 .grupo .selo { background: var(--selo); border-radius: 8px; padding: 4px 8px; display: inline-flex; border: 1px solid var(--line); }
 .grupo img { height: 30px; width: auto; display: block; }
 @media (max-width: 620px) { .brand .logo { height: 34px; } .brand-sub { font-size: 15px; padding-left: 10px; } }
+span.f { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px; }
+span.f small { font-weight: 400; color: var(--muted); }

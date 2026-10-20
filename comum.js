@@ -16,6 +16,29 @@
   };
   const ABERTOS = ['novo', 'analise', 'aguardando', 'aprovado'];
   const PRIORIDADES = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' };
+  const DECISOES = { pendente: 'Em análise', aceito: 'Aceito', recusado: 'Recusado' };
+  // Fotos e vídeos aceitos: tipo do arquivo -> extensão usada no armazenamento.
+  const MIME_EXT = {
+    'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heic',
+    'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm', 'video/3gpp': '3gp'
+  };
+  const EXT_MIME = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', heif: 'image/heic',
+    mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', '3gp': 'video/3gpp' };
+  const MAX_ARQUIVO = 50 * 1024 * 1024; // limite por arquivo do plano gratuito do Supabase
+  const ehVideo = (caminho) => /\.(mp4|mov|webm|3gp)$/i.test(caminho || '');
+  // Alguns celulares mandam o arquivo sem tipo; nesse caso, usamos a extensão do nome.
+  function tipoArquivo(f) {
+    if (MIME_EXT[f.type]) return { mime: f.type, ext: MIME_EXT[f.type] };
+    const ext = ((f.name || '').split('.').pop() || '').toLowerCase();
+    return EXT_MIME[ext] ? { mime: EXT_MIME[ext], ext: MIME_EXT[EXT_MIME[ext]] } : null;
+  }
+  function tamanho(bytes) { return bytes >= 1048576 ? (bytes / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB'; }
+  // Texto da decisão de um produto, como "Aceito · 4 de 6 un.".
+  function decisaoTexto(i) {
+    let t = DECISOES[i.decisao] || i.decisao;
+    if (i.decisao === 'aceito' && i.qtd_aceita != null && i.quantidade != null && i.qtd_aceita < i.quantidade) t += ' · ' + i.qtd_aceita + ' de ' + i.quantidade + ' un.';
+    return t;
+  }
 
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -80,9 +103,9 @@
     const m = (err && (err.message || err.error_description)) || '';
     if (/Failed to fetch|NetworkError|network/i.test(m)) return 'Sem conexão com a internet. Confira e tente de novo.';
     if (/Invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
-    if (/Preencha|inválid|longa demais|no máximo/i.test(m)) return m + '.';
-    if (/exceeded the maximum allowed size|Payload too large/i.test(m)) return 'Foto grande demais (máximo 8 MB).';
-    if (/mime type|invalid_mime/i.test(m)) return 'Formato de foto não aceito. Use JPG, PNG, WEBP ou HEIC.';
+    if (/Preencha|inválid|longa demais|no máximo|Informe|demais/i.test(m)) return m + '.';
+    if (/exceeded the maximum allowed size|Payload too large/i.test(m)) return 'Arquivo grande demais (máximo 50 MB).';
+    if (/mime type|invalid_mime/i.test(m)) return 'Formato não aceito. Envie foto (JPG, PNG, HEIC) ou vídeo (MP4, MOV).';
     return 'Algo deu errado. Tente de novo em instantes.';
   }
 
@@ -90,5 +113,5 @@
     return '<div class="banner"><div><b>Site ainda não conectado ao banco de dados.</b> Preencha o arquivo <span class="mono">config.js</span> com a URL e a chave do Supabase (veja o passo a passo no LEIAME).</div></div>';
   }
 
-  window.SAC = { TIPOS, STATUS, ABERTOS, PRIORIDADES, $, esc, soDigitos, store, prazoDe, prazoInfo, dur, quando, waNumero, foneBonito, toast, copiar, cliente, mensagemErro, configPendente };
+  window.SAC = { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, MIME_EXT, MAX_ARQUIVO, ehVideo, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, dur, quando, waNumero, foneBonito, toast, copiar, cliente, mensagemErro, configPendente };
 })();

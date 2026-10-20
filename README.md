@@ -47,7 +47,11 @@ No painel, a aba **Lojas** é onde a equipe cadastra as lojas, uma por uma ou co
 - um **link próprio** (`.../Victos/?loja=código`): o formulário abre com a loja identificada, sem digitar nome, CNPJ e cidade. O aparelho lembra da loja nas próximas visitas;
 - um **QR code** pronto para imprimir (botão "Baixar QR code") e uma **mensagem** pronta para mandar no WhatsApp.
 
-Ao desativar uma loja, o link dela para de funcionar. Também existe um link geral, para quem ainda não foi cadastrado.
+Ao desativar uma loja, o link dela para de funcionar.
+
+A aba **Produtos** guarda o catálogo (código + nome). Cadastre um por um ou cole as duas colunas da planilha em **Importar lista**; códigos repetidos têm o nome atualizado. No formulário, a loja digita o código e o nome aparece sozinho, ou começa pelo nome e escolhe entre as sugestões. Produto fora do catálogo continua podendo ser digitado à mão.
+
+**Ao atualizar o site com novidades no banco**, rode de novo o `supabase.sql` inteiro no SQL Editor. Ele só acrescenta o que falta e não apaga nenhum dado. Também existe um link geral, para quem ainda não foi cadastrado.
 
 ## Como os dados ficam protegidos
 

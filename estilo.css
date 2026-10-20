@@ -328,3 +328,22 @@ span.f small { font-weight: 400; color: var(--muted); }
 .qr-link { font-size: 13px; overflow-wrap: anywhere; color: var(--muted); }
 .chip-filtro { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 14px; margin-bottom: 12px; border-radius: 10px; background: var(--accent-soft); }
 .people li .av { flex: none; }
+
+/* Sugestões do catálogo no formulário */
+.item-linha { position: relative; }
+.item-linha[data-cat="1"] .c-sku input, .item-linha[data-cat="1"] .c-desc input { border-color: var(--ok); }
+.sugestoes { position: absolute; z-index: 6; left: 12px; right: 12px; top: calc(100% - 6px); margin: 0; padding: 4px; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); max-height: 280px; overflow-y: auto; }
+.sugestoes button { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: baseline; text-align: left; padding: 10px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; }
+.sugestoes button:hover, .sugestoes button:focus-visible { background: var(--accent-soft); outline: none; }
+.sugestoes button b { color: var(--accent); font-size: 13px; }
+.sugestoes button span { overflow-wrap: anywhere; }
+
+/* Produtos (painel) */
+.pr-row { display: grid; grid-template-columns: 160px minmax(0, 1fr) auto; gap: 8px 14px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--line); }
+.pr-row:first-child { border-top: 0; }
+.pr-row.inativa { opacity: .65; }
+.pr-row b { overflow-wrap: anywhere; font-size: 14px; }
+.pr-nome { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 620px) { .pr-row { grid-template-columns: minmax(0, 1fr); } .pr-row .lj-acoes { justify-content: flex-start; } }
+.filters.dois { grid-template-columns: minmax(0, 1fr) 200px; }
+@media (max-width: 620px) { .filters.dois { grid-template-columns: minmax(0, 1fr); } }

@@ -756,7 +756,7 @@
     const lista0 = S.produtos || [];
     const q = semAcento($('pr-q').value.trim()), filtro = $('pr-filtro').value;
     const lista = lista0.filter((p) => (filtro === 'todos' || (filtro === 'ativos') === p.ativo) &&
-      (!q || p.sku.toLowerCase().includes(q) || semAcento(p.nome).includes(q)));
+      (!q || p.sku.toLowerCase().includes(q) || q.split(/\s+/).every((w) => semAcento(p.nome).includes(w))));
     const ativos = lista0.filter((p) => p.ativo).length;
     $('pr-total').textContent = lista0.length ? `${ativos} produto${ativos === 1 ? '' : 's'} ativo${ativos === 1 ? '' : 's'} no catálogo` + (lista.length > 200 ? ` · mostrando 200 de ${lista.length}; use a busca para achar os outros` : '') : '';
     if (!lista0.length) {

@@ -127,10 +127,10 @@
 <script src="comum.js"></script>
 <script>
 (function () {
-  const { TIPOS, STATUS, ABERTOS, PRIORIDADES, $, esc, soDigitos, prazoDe, prazoInfo, quando, waNumero, foneBonito, toast, copiar, mensagemErro } = window.SAC;
+  const { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, ehVideo, decisaoTexto, $, esc, soDigitos, prazoDe, prazoInfo, quando, waNumero, foneBonito, toast, copiar, mensagemErro } = window.SAC;
   const cfg = window.SAC_CONFIG || {};
   const sb = window.SAC.cliente();
-  const S = { uid: null, email: '', tickets: [], equipe: {}, view: 'fila', aberto: null, msgs: [], fotos: [], filtro: { q: '', status: 'abertos', tipo: '' }, ocupado: false, canal: null, ultimaResposta: '' };
+  const S = { uid: null, email: '', tickets: [], equipe: {}, view: 'fila', aberto: null, msgs: [], midias: [], renderPendente: false, filtro: { q: '', status: 'abertos', tipo: '' }, ocupado: false, canal: null, ultimaResposta: '' };
   const linkLoja = new URL('./', location.href).href;
 
     if (!sb) { $('banners').innerHTML = window.SAC.configPendente(); return; }
@@ -186,9 +186,10 @@
     $('equipe-lista').innerHTML = (data || []).map((p) => `<li><span class="av" aria-hidden="true">${esc((p.nome[0] || '?').toUpperCase())}</span><span>${esc(p.nome)}${p.user_id === S.uid ? ' (você)' : ''}</span></li>`).join('');
   }
   async function carregar() {
-    const { data, error } = await sb.from('chamados').select('*').order('criado_em', { ascending: false }).limit(1000);
+    const { data, error } = await sb.from('chamados').select('*, itens:chamado_itens(*)').order('criado_em', { ascending: false }).limit(1000);
     if (error) { toast(mensagemErro(error)); return; }
     S.tickets = data || [];
+    S.tickets.forEach((t) => { t.itens = (t.itens || []).slice().sort((a, b) => a.ordem - b.ordem); });
     renderFila();
     if (S.aberto) renderGaveta();
   }
@@ -198,6 +199,7 @@
     if (S.canal) return;
     S.canal = sb.channel('fila-sac')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chamados' }, agendarRecarga)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chamado_itens' }, agendarRecarga)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensagens' }, (p) => {
         if (S.aberto && p.new && p.new.chamado_id === S.aberto) carregarMensagens();
       })
@@ -224,20 +226,26 @@
       if (STATUS[S.filtro.status] && t.status !== S.filtro.status) return false;
       if (S.filtro.tipo && t.tipo !== S.filtro.tipo) return false;
       if (q) {
-        const alvo = [t.protocolo, t.loja_nome, t.loja_cidade, t.loja_contato, t.nf, t.produto, t.motivo].join(' ').toLowerCase();
+        const alvo = [t.protocolo, t.loja_nome, t.loja_cidade, t.loja_contato, t.nf, t.motivo].concat((t.itens || []).flatMap((i) => [i.sku, i.produto])).join(' ').toLowerCase();
         if (!alvo.includes(q) && !(qd.length >= 4 && (soDigitos(t.loja_cnpj).includes(qd) || t.loja_whatsapp.includes(qd)))) return false;
       }
       return true;
     }).sort(ordenar);
   }
   const cabecalho = '<div class="row hd" aria-hidden="true"><span>Protocolo</span><span>Loja</span><span>Tipo / motivo</span><span>Prazo</span><span>Status</span></div>';
+  function resumoItens(t) {
+    const n = (t.itens || []).length;
+    if (!n) return '';
+    const pend = t.itens.filter((i) => i.decisao === 'pendente').length;
+    return ' · ' + n + (n === 1 ? ' produto' : ' produtos') + (pend ? ', ' + pend + ' a decidir' : '');
+  }
   function linha(t) {
     const p = prazoInfo(t);
     const pri = t.prioridade !== 'normal' ? ` <span class="tag ${esc(t.prioridade)}">${esc(PRIORIDADES[t.prioridade])}</span>` : '';
     return `<button class="row" type="button" data-id="${esc(t.id)}">
       <span class="cell c-prot mono sub">${esc(t.protocolo)}</span>
       <span class="cell c-loja"><span class="loja" style="display:block">${esc(t.loja_nome)}${pri}</span><span class="sub" style="display:block">${esc(t.loja_cidade || t.loja_contato)}</span></span>
-      <span class="cell c-tipo"><span style="display:block;font-weight:600">${esc(TIPOS[t.tipo]?.rot || t.tipo)}</span><span class="sub" style="display:block">${esc(t.motivo)}${t.responsavel ? ' · ' + esc(nome(t.responsavel)) : ''}</span></span>
+      <span class="cell c-tipo"><span style="display:block;font-weight:600">${esc(TIPOS[t.tipo]?.rot || t.tipo)}</span><span class="sub" style="display:block">${esc(t.motivo)}${resumoItens(t)}${t.responsavel ? ' · ' + esc(nome(t.responsavel)) : ''}</span></span>
       <span class="cell c-prazo prazo ${p.cls}">${esc(p.txt)}</span>
       <span class="cell c-status"><span class="pill s-${esc(t.status)}">${esc(STATUS[t.status])}</span></span>
     </button>`;
@@ -274,16 +282,16 @@
 
   // ---------- gaveta ----------
   async function abrir(id) {
-    S.aberto = id; S.msgs = []; S.fotos = []; S.ultimaResposta = '';
+    S.aberto = id; S.msgs = []; S.midias = []; S.ultimaResposta = '';
     $('dr-msg').value = '';
     $('drawer-root').hidden = false;
     renderGaveta();
     $('dr-fechar').focus();
     const t = S.tickets.find((x) => x.id === id);
     await carregarMensagens();
-    if (t && t.fotos && t.fotos.length) {
-      const { data } = await sb.storage.from('fotos').createSignedUrls(t.fotos, 3600);
-      if (S.aberto === id) { S.fotos = (data || []).filter((f) => f.signedUrl).map((f) => f.signedUrl); renderGaveta(); }
+    if (t && t.anexos && t.anexos.length) {
+      const { data } = await sb.storage.from('anexos').createSignedUrls(t.anexos, 3600);
+      if (S.aberto === id) { S.midias = (data || []).filter((f) => f.signedUrl).map((f) => ({ url: f.signedUrl, video: ehVideo(f.path) })); renderGaveta(); }
     }
   }
   async function carregarMensagens() {
@@ -298,9 +306,39 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.aberto) fechar(); });
   $('dr-copiar').addEventListener('click', () => copiar($('dr-code').textContent));
 
+  // Produtos: cada um recebe a sua decisão (aceitar, com quantidade, ou recusar, com justificativa).
+  function itensHtml(t) {
+    const itens = t.itens || [];
+    if (!itens.length) return '';
+    const pend = itens.filter((i) => i.decisao === 'pendente').length;
+    return `<div class="box"><h3>Produtos · ${itens.length}${pend ? ` <span class="muted" style="text-transform:none;letter-spacing:0">(${pend} a decidir)</span>` : ''}</h3>
+      ${itens.map((i) => `<div class="item-dec" data-item="${i.id}">
+        <div class="id-top">
+          <div class="ir-prod"><b class="mono">${esc(i.sku || 'Sem código')}</b> ${esc(i.produto || '')}${i.quantidade != null ? ` <span class="muted">· ${esc(i.quantidade)} un.</span>` : ''}</div>
+          <span class="dec dec-${esc(i.decisao)}">${esc(decisaoTexto(i))}</span>
+        </div>
+        ${i.justificativa ? `<div class="ir-just">${esc(i.justificativa)}</div>` : ''}
+        <div class="id-form">
+          <div class="seg" role="group" aria-label="Decisão do produto">
+            <button type="button" data-dec="aceito" aria-pressed="${i.decisao === 'aceito'}">Aceitar</button>
+            <button type="button" data-dec="recusado" aria-pressed="${i.decisao === 'recusado'}">Recusar</button>
+            <button type="button" data-dec="pendente" aria-pressed="${i.decisao === 'pendente'}">Pendente</button>
+          </div>
+          <label class="f id-qtd" ${i.decisao === 'aceito' ? '' : 'hidden'}>Qtd. aceita<input type="number" min="0" step="1" inputmode="numeric" data-campo="qtd" value="${esc(i.qtd_aceita ?? i.quantidade ?? '')}"></label>
+          <label class="f id-just">Justificativa<input type="text" maxlength="500" data-campo="just" value="${esc(i.justificativa || '')}" placeholder="Ex.: fora do prazo de troca"></label>
+          <button class="btn small primary" type="button" data-salvar>Salvar</button>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  }
+
   function renderGaveta() {
     const t = S.tickets.find((x) => x.id === S.aberto);
     if (!t) return;
+    // Não redesenha enquanto alguém digita na gaveta (a fila atualiza sozinha em tempo real).
+    const ativo = document.activeElement;
+    if (ativo && $('dr-body').contains(ativo) && ativo.matches('input, textarea')) { S.renderPendente = true; return; }
+    S.renderPendente = false;
     const p = prazoInfo(t);
     $('dr-code').textContent = t.protocolo;
     const quem = (m) => m.autor === 'loja' ? t.loja_contato + ' (loja)' : m.autor === 'sistema' && !m.autor_id ? 'Sistema' : nome(m.autor_id);
@@ -323,13 +361,15 @@
         <dl class="kv">
           <dt>Motivo</dt><dd>${esc(t.motivo)}</dd>
           <dt>Nota / pedido</dt><dd class="mono">${esc(t.nf || '—')}</dd>
-          <dt>Produto</dt><dd>${esc(t.produto || '—')}${t.quantidade != null ? ' · ' + esc(t.quantidade) + ' un.' : ''}</dd>
           <dt>Aberto em</dt><dd>${esc(quando(t.criado_em))}</dd>
           <dt>Prazo</dt><dd>${esc(quando(prazoDe(t).toISOString()))}</dd>
         </dl>
         <div class="desc">${esc(t.descricao)}</div>
-        ${t.fotos && t.fotos.length ? (S.fotos.length ? `<div class="photos">${S.fotos.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Foto enviada pela loja" loading="lazy"></a>`).join('')}</div>` : `<p class="muted" style="margin:0">Carregando ${t.fotos.length} foto(s)…</p>`) : ''}
+        ${t.anexos && t.anexos.length ? (S.midias.length ? `<div class="photos">${S.midias.map((m) => m.video
+          ? `<div class="midia-video"><video src="${esc(m.url)}" controls playsinline preload="metadata"></video></div>`
+          : `<a href="${esc(m.url)}" target="_blank" rel="noopener"><img src="${esc(m.url)}" alt="Foto enviada pela loja" loading="lazy"></a>`).join('')}</div>` : `<p class="muted" style="margin:0">Carregando ${t.anexos.length} anexo(s)…</p>`) : ''}
       </div>
+      ${itensHtml(t)}
       <div class="box"><h3>Loja</h3>
         <dl class="kv">
           <dt>Loja</dt><dd>${esc(t.loja_nome)}</dd>
@@ -378,7 +418,16 @@
       await registrar(t, { prioridade: e.target.value }, { autor: 'sistema', interna: true, texto: 'Prioridade alterada para ' + PRIORIDADES[e.target.value] });
     }
   });
+  $('dr-body').addEventListener('focusout', () => { setTimeout(() => { if (S.renderPendente) renderGaveta(); }, 0); });
   $('dr-body').addEventListener('click', async (e) => {
+    const seg = e.target.closest('[data-dec]');
+    if (seg) {
+      const box = seg.closest('.item-dec');
+      box.querySelectorAll('[data-dec]').forEach((b) => b.setAttribute('aria-pressed', String(b === seg)));
+      box.querySelector('.id-qtd').hidden = seg.dataset.dec !== 'aceito';
+      return;
+    }
+    if (e.target.closest('[data-salvar]')) { salvarItem(e.target.closest('.item-dec')); return; }
     if (e.target.id !== 'dr-assumir') return;
     const t = S.tickets.find((x) => x.id === S.aberto);
     if (!t) return;
@@ -408,6 +457,37 @@
     if (e.target.id === 'dr-wa-copiar') copiar(msg);
     if (e.target.id === 'dr-wa-link') e.target.href = 'https://wa.me/' + waNumero(t.loja_whatsapp) + '?text=' + encodeURIComponent(msg);
   });
+  async function salvarItem(box) {
+    const t = S.tickets.find((x) => x.id === S.aberto);
+    const item = t && (t.itens || []).find((i) => String(i.id) === box.dataset.item);
+    if (!item || S.ocupado) return;
+    const decisao = (box.querySelector('[data-dec][aria-pressed="true"]') || {}).dataset?.dec || 'pendente';
+    const qtdTxt = box.querySelector('[data-campo="qtd"]').value.trim();
+    const justificativa = box.querySelector('[data-campo="just"]').value.trim() || null;
+    let qtd_aceita = null;
+    if (decisao === 'aceito') {
+      qtd_aceita = qtdTxt === '' ? item.quantidade : Math.max(0, Math.floor(Number(qtdTxt)));
+      if (qtd_aceita != null && item.quantidade != null && qtd_aceita > item.quantidade) { toast('A quantidade aceita não pode passar de ' + item.quantidade + '.'); return; }
+      if (qtd_aceita === 0) { toast('Para não aceitar nenhuma unidade, use "Recusar".'); return; }
+    }
+    if (decisao === 'recusado' && !justificativa) { toast('Escreva a justificativa da recusa; a loja vai ver.'); box.querySelector('[data-campo="just"]').focus(); return; }
+    S.ocupado = true;
+    try {
+      const { error } = await sb.from('chamado_itens').update({ decisao, qtd_aceita, justificativa }).eq('id', item.id);
+      if (error) throw error;
+      Object.assign(item, { decisao, qtd_aceita, justificativa });
+      const nomeItem = [item.sku, item.produto].filter(Boolean).join(' · ');
+      const parcial = decisao === 'aceito' && qtd_aceita != null && item.quantidade != null && qtd_aceita < item.quantidade ? ` (${qtd_aceita} de ${item.quantidade} un.)` : '';
+      const texto = decisao === 'pendente' ? 'Produto ' + nomeItem + ' voltou para análise'
+        : 'Produto ' + nomeItem + ': ' + (decisao === 'aceito' ? 'aceito' : 'recusado') + parcial + (justificativa ? '. Motivo: ' + justificativa : '');
+      await sb.from('mensagens').insert({ chamado_id: t.id, autor: 'sistema', autor_id: S.uid, interna: false, texto });
+      if (document.activeElement && box.contains(document.activeElement)) document.activeElement.blur();
+      toast('Decisão salva. A loja já vê na consulta.');
+      renderFila(); renderGaveta(); carregarMensagens();
+    } catch (err) { toast(mensagemErro(err)); }
+    finally { S.ocupado = false; }
+  }
+
   function textoWhats(t, corpo) {
     return `Olá, ${t.loja_contato}! Aqui é o SAC${cfg.empresa ? ' da ' + cfg.empresa : ''}.\nChamado ${t.protocolo} (${TIPOS[t.tipo]?.rot || ''}):\n` +
       (corpo || 'O status agora é: ' + STATUS[t.status] + '.') + `\n\nAcompanhe em: ${linkLoja}#acompanhar`;
@@ -415,11 +495,13 @@
 
   // ---------- exportação ----------
   $('btn-csv').addEventListener('click', () => {
-    const cols = ['Protocolo', 'Tipo', 'Motivo', 'Status', 'Prioridade', 'Loja', 'CNPJ', 'Cidade', 'Contato', 'WhatsApp', 'Nota/Pedido', 'Produto', 'Quantidade', 'Descrição', 'Responsável', 'Aberto em', 'Prazo', 'Atualizado em', 'Atrasado'];
+    const cols = ['Protocolo', 'Tipo', 'Motivo', 'Status', 'Prioridade', 'Loja', 'CNPJ', 'Cidade', 'Contato', 'WhatsApp', 'Nota/Pedido', 'SKU', 'Produto', 'Quantidade', 'Decisão', 'Qtd. aceita', 'Justificativa', 'Descrição', 'Responsável', 'Aberto em', 'Prazo', 'Atualizado em', 'Atrasado'];
     const cel = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-    const linhas = filtrados().map((t) => [t.protocolo, TIPOS[t.tipo]?.rot, t.motivo, STATUS[t.status], PRIORIDADES[t.prioridade], t.loja_nome, t.loja_cnpj, t.loja_cidade,
-      t.loja_contato, foneBonito(t.loja_whatsapp), t.nf, t.produto, t.quantidade, t.descricao, t.responsavel ? nome(t.responsavel) : '', quando(t.criado_em),
-      quando(prazoDe(t).toISOString()), quando(t.atualizado_em), prazoInfo(t).atrasado ? 'Sim' : 'Não'].map(cel).join(';'));
+    // Uma linha por produto, para dar para filtrar e somar as devoluções aceitas na planilha.
+    const linhas = filtrados().flatMap((t) => ((t.itens || []).length ? t.itens : [{}]).map((i) => [t.protocolo, TIPOS[t.tipo]?.rot, t.motivo, STATUS[t.status], PRIORIDADES[t.prioridade],
+      t.loja_nome, t.loja_cnpj, t.loja_cidade, t.loja_contato, foneBonito(t.loja_whatsapp), t.nf, i.sku, i.produto, i.quantidade,
+      i.decisao ? DECISOES[i.decisao] : '', i.qtd_aceita, i.justificativa, t.descricao, t.responsavel ? nome(t.responsavel) : '', quando(t.criado_em),
+      quando(prazoDe(t).toISOString()), quando(t.atualizado_em), prazoInfo(t).atrasado ? 'Sim' : 'Não'].map(cel).join(';')));
     const blob = new Blob(['﻿' + cols.map(cel).join(';') + '\n' + linhas.join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);

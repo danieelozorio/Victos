@@ -8,8 +8,8 @@ O site tem duas partes:
 
 | Página | Quem usa | Precisa de login? |
 |---|---|---|
-| `index.html` | Lojas: abrir e acompanhar chamados | Não. A loja consulta com protocolo + WhatsApp |
-| `painel.html` | Equipe do SAC: fila, status, respostas, fotos, planilha | Sim, e-mail e senha |
+| `index.html` | Lojas: abrir chamados (vários produtos, fotos e vídeos) e acompanhar a resposta | Não. A loja consulta com protocolo + WhatsApp |
+| `painel.html` | Equipe do SAC: fila, status, decisão por produto, respostas, fotos e vídeos, planilha | Sim, e-mail e senha |
 
 Os dados ficam no **Supabase** (banco de dados gratuito) e o site fica no **GitHub Pages** (hospedagem gratuita).
 
@@ -48,12 +48,13 @@ No painel, a aba **Link para as lojas** tem o link, uma mensagem pronta para man
 
 - A loja **não lê o banco**. Ela só abre chamados e consulta um chamado quando sabe o protocolo **e** o WhatsApp usado na abertura.
 - As notas internas da equipe nunca aparecem para a loja.
-- As fotos ficam num bucket privado. A loja só envia, e só a equipe abre (por links que expiram em 1 hora).
+- Fotos e vídeos ficam num bucket privado (`anexos`). A loja só envia, e só a equipe abre (por links que expiram em 1 hora).
+- Cada produto do chamado recebe a sua decisão (aceito, com a quantidade, ou recusado, com justificativa). O banco registra quem decidiu e quando, e a loja vê o resultado de cada produto na consulta.
 - Um usuário que faz login mas não está na tabela `equipe` não vê nada.
 
 ## Limites do plano gratuito do Supabase
 
-São 500 MB de banco e 1 GB de fotos, o bastante para milhares de chamados. Um projeto sem acesso por 7 dias é pausado; basta entrar no painel do Supabase e reativar. Com uso diário, isso não acontece.
+São 500 MB de banco e 1 GB de arquivos, e cada arquivo pode ter no máximo 50 MB (um vídeo de celular de 20 a 30 segundos). O banco aguenta milhares de chamados, mas vídeos enchem o 1 GB rápido: com uso intenso de vídeo, vale o plano Pro (US$ 25/mês, 100 GB). Um projeto sem acesso por 7 dias é pausado; basta entrar no painel do Supabase e reativar. Com uso diário, isso não acontece.
 
 ## Arquivos
 

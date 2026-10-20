@@ -66,6 +66,29 @@ create table if not exists public.equipe (
   criado_em  timestamptz not null default now()
 );
 
+-- Lojas cadastradas pela equipe. Cada uma tem um código que vai no link dela,
+-- para o formulário já abrir com os dados da loja preenchidos.
+create or replace function public.gerar_codigo_loja()
+returns text language sql volatile as $$
+  select string_agg(substr('abcdefghjkmnpqrstuvwxyz23456789', 1 + (get_byte(b, i) % 31), 1), '')
+    from (select uuid_send(gen_random_uuid()) as b) r, generate_series(0, 6) i;
+$$;
+
+create table if not exists public.lojas (
+  id         uuid primary key default gen_random_uuid(),
+  codigo     text unique not null default public.gerar_codigo_loja(),
+  nome       text not null check (length(trim(nome)) between 1 and 200),
+  cnpj       text,
+  cidade     text,
+  contato    text,
+  whatsapp   text,
+  ativa      boolean not null default true,
+  criado_em  timestamptz not null default now()
+);
+
+alter table public.chamados add column if not exists loja_id uuid references public.lojas (id) on delete set null;
+create index if not exists chamados_loja_idx on public.chamados (loja_id);
+
 -- ---------- Funções auxiliares ----------
 
 create or replace function public.eh_equipe()
@@ -126,6 +149,7 @@ alter table public.chamados      enable row level security;
 alter table public.chamado_itens enable row level security;
 alter table public.mensagens     enable row level security;
 alter table public.equipe        enable row level security;
+alter table public.lojas         enable row level security;
 
 drop policy if exists chamados_equipe_le     on public.chamados;
 drop policy if exists chamados_equipe_altera on public.chamados;
@@ -143,10 +167,14 @@ create policy mensagens_equipe_le    on public.mensagens for select to authentic
 create policy mensagens_equipe_grava on public.mensagens for insert to authenticated
   with check (public.eh_equipe() and autor in ('equipe', 'sistema') and autor_id = auth.uid());
 
+drop policy if exists lojas_equipe on public.lojas;
+create policy lojas_equipe on public.lojas for all to authenticated using (public.eh_equipe()) with check (public.eh_equipe());
+
 drop policy if exists equipe_le on public.equipe;
 create policy equipe_le on public.equipe for select to authenticated using (public.eh_equipe());
 
-revoke all on public.chamados, public.chamado_itens, public.mensagens, public.equipe from anon;
+revoke all on public.chamados, public.chamado_itens, public.mensagens, public.equipe, public.lojas from anon;
+grant select, insert, update, delete on public.lojas to authenticated;
 grant select, update on public.chamados to authenticated;
 grant select on public.chamado_itens to authenticated;
 grant update (decisao, qtd_aceita, justificativa) on public.chamado_itens to authenticated;
@@ -176,7 +204,15 @@ declare
   v_proto     text;
   v_id        uuid;
   v_tentativa integer := 0;
+  v_loja      public.lojas%rowtype;
 begin
+  if coalesce(dados->>'loja_codigo', '') <> '' then
+    select * into v_loja from public.lojas where codigo = lower(trim(dados->>'loja_codigo')) and ativa;
+    if found then
+      -- Os dados cadastrados valem mais que os digitados: o link da loja é a fonte.
+      dados := dados || jsonb_build_object('loja_nome', v_loja.nome, 'loja_cnpj', coalesce(v_loja.cnpj, ''), 'loja_cidade', coalesce(v_loja.cidade, ''));
+    end if;
+  end if;
   if v_tipo not in ('reclamacao', 'devolucao', 'avaria', 'duvida') then
     raise exception 'Tipo de atendimento inválido' using errcode = '22023';
   end if;
@@ -211,10 +247,10 @@ begin
       (select string_agg(substr('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 1 + (get_byte(b, i) % 32), 1), '')
          from (select uuid_send(gen_random_uuid()) as b) r, generate_series(0, 3) i);
     begin
-      insert into public.chamados (protocolo, tipo, motivo, prioridade, loja_nome, loja_cnpj, loja_cidade,
+      insert into public.chamados (protocolo, tipo, motivo, prioridade, loja_id, loja_nome, loja_cnpj, loja_cidade,
                                    loja_contato, loja_whatsapp, nf, descricao, anexos)
       values (v_proto, v_tipo, left(trim(dados->>'motivo'), 120),
-              case when v_tipo = 'avaria' then 'alta' else 'normal' end,
+              case when v_tipo = 'avaria' then 'alta' else 'normal' end, v_loja.id,
               left(trim(dados->>'loja_nome'), 200), left(nullif(trim(dados->>'loja_cnpj'), ''), 30),
               left(nullif(trim(dados->>'loja_cidade'), ''), 120), left(trim(dados->>'loja_contato'), 120),
               v_whats, left(nullif(trim(dados->>'nf'), ''), 60), trim(dados->>'descricao'), v_anexos)
@@ -240,6 +276,15 @@ begin
   insert into public.mensagens (chamado_id, autor, texto) values (v_id, 'sistema', 'Chamado aberto pela loja');
   return jsonb_build_object('protocolo', v_proto);
 end $$;
+
+-- Dados da loja para o formulário que abre pelo link dela.
+create or replace function public.loja_por_codigo(p_codigo text)
+returns jsonb
+language sql stable security definer set search_path = public
+as $$
+  select jsonb_build_object('codigo', codigo, 'nome', nome, 'cnpj', cnpj, 'cidade', cidade, 'contato', contato, 'whatsapp', whatsapp)
+    from public.lojas where codigo = lower(trim(p_codigo)) and ativa;
+$$;
 
 -- A loja consulta com protocolo + WhatsApp informado na abertura.
 create or replace function public.consultar_chamado(p_protocolo text, p_whatsapp text)
@@ -287,6 +332,8 @@ end $$;
 revoke all on function public.abrir_chamado(jsonb) from public;
 revoke all on function public.consultar_chamado(text, text) from public;
 revoke all on function public.mensagem_loja(text, text, text) from public;
+revoke all on function public.loja_por_codigo(text) from public;
+grant execute on function public.loja_por_codigo(text) to anon, authenticated;
 grant execute on function public.abrir_chamado(jsonb) to anon, authenticated;
 grant execute on function public.consultar_chamado(text, text) to anon, authenticated;
 grant execute on function public.mensagem_loja(text, text, text) to anon, authenticated;
@@ -317,7 +364,7 @@ declare
   t text;
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
-    foreach t in array array['chamados', 'chamado_itens', 'mensagens'] loop
+    foreach t in array array['chamados', 'chamado_itens', 'mensagens', 'lojas'] loop
       if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = t) then
         execute format('alter publication supabase_realtime add table public.%I', t);
       end if;

@@ -42,7 +42,12 @@ Com o GitHub Pages ativo na branch `main` (Settings > Pages > Deploy from a bran
 - Lojas: `https://danieelozorio.github.io/Victos/`
 - Equipe: `https://danieelozorio.github.io/Victos/painel.html`
 
-No painel, a aba **Link para as lojas** tem o link, uma mensagem pronta para mandar no WhatsApp e um QR code para imprimir.
+No painel, a aba **Lojas** é onde a equipe cadastra as lojas, uma por uma ou colando uma lista do Excel (Nome, CNPJ, Cidade, Contato, WhatsApp). Cada loja ganha:
+
+- um **link próprio** (`.../Victos/?loja=código`): o formulário abre com a loja identificada, sem digitar nome, CNPJ e cidade. O aparelho lembra da loja nas próximas visitas;
+- um **QR code** pronto para imprimir (botão "Baixar QR code") e uma **mensagem** pronta para mandar no WhatsApp.
+
+Ao desativar uma loja, o link dela para de funcionar. Também existe um link geral, para quem ainda não foi cadastrado.
 
 ## Como os dados ficam protegidos
 

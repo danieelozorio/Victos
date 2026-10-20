@@ -42,8 +42,8 @@
         <p class="lead">Registre aqui reclamações, devoluções, avarias e dúvidas. Você recebe um número de protocolo e acompanha a resposta na aba <b>Acompanhar chamado</b>.</p>
 
         <fieldset>
-          <legend>Tipo de atendimento</legend>
-          <div class="tipos" id="tipos"></div>
+          <legend>Atendimento</legend>
+          <label class="f"><span>Qual o problema? <span class="req">*</span></span><select id="f-motivo" required></select></label>
         </fieldset>
 
         <fieldset>
@@ -61,7 +61,6 @@
         <fieldset>
           <legend>Detalhes</legend>
           <div class="fields">
-            <label class="f"><span>Motivo <span class="req">*</span></span><select id="f-motivo" required></select></label>
             <label class="f">Nº da nota fiscal ou pedido<input type="text" id="f-nf" maxlength="60"></label>
             <label class="f full"><span>Descreva o que aconteceu <span class="req">*</span></span><textarea id="f-desc" maxlength="4000" required placeholder="Ex.: Recebemos 3 caixas do pedido 4521; uma veio com a embalagem rasgada e 6 unidades quebradas."></textarea></label>
           </div>
@@ -167,7 +166,7 @@
 <script src="comum.js"></script>
 <script>
 (function () {
-  const { TIPOS, STATUS, MAX_ARQUIVO, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, quando, toast, copiar, mensagemErro } = window.SAC;
+  const { TIPOS, STATUS, MOTIVOS_ITEM, fmtQtd, lerQtd, MAX_ARQUIVO, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, quando, toast, copiar, mensagemErro } = window.SAC;
   const cfg = window.SAC_CONFIG || {};
   const sb = window.SAC.cliente();
   let atual = null; // chamado aberto na consulta: {protocolo, whatsapp}
@@ -189,21 +188,21 @@
   document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => irPara(b.dataset.view)));
 
   // ---------- formulário ----------
-  $('tipos').innerHTML = Object.entries(TIPOS).map(([k, t], i) =>
-    `<label class="tipo"><input type="radio" name="tipo" value="${k}" ${i === 0 ? 'checked' : ''}><span><b>${esc(t.rot)}</b><i>${esc(t.dica)}</i></span></label>`).join('');
   $('sla-list').innerHTML = '<h3>Prazo de primeira resposta</h3>' + Object.values(TIPOS).map((t) =>
     `<div><span>${esc(t.rot)}</span><b class="mono">${t.sla} h</b></div>`).join('');
-  const tipoAtual = () => (document.querySelector('input[name="tipo"]:checked') || {}).value || 'reclamacao';
-  function motivos() {
-    $('f-motivo').innerHTML = '<option value="">Selecione</option>' + TIPOS[tipoAtual()].motivos.map((m) => `<option>${esc(m)}</option>`).join('');
-  }
+  // Um campo só: os motivos vêm agrupados por tipo, e o tipo do chamado sai do motivo escolhido
+  // (valor "tipo|motivo"). Assim prazo, prioridade e filtros do painel continuam valendo.
+  const ORDEM_TIPOS = ['avaria', 'devolucao', 'reclamacao', 'duvida'];
+  $('f-motivo').innerHTML = '<option value="">Selecione o motivo</option>' + ORDEM_TIPOS.map((k) =>
+    `<optgroup label="${esc(TIPOS[k].rot)}">${TIPOS[k].motivos.map((m) => `<option value="${k}|${esc(m)}">${esc(m)}</option>`).join('')}</optgroup>`).join('');
+  const tipoAtual = () => ($('f-motivo').value.split('|')[0]) || '';
+  const motivoAtual = () => $('f-motivo').value.split('|').slice(1).join('|');
   // Produtos: exigidos em devolução e avaria; opcionais nos outros tipos.
   const exigeProduto = () => ['devolucao', 'avaria'].includes(tipoAtual());
   function ajustarTipo() {
-    motivos();
-    $('itens-leg').textContent = exigeProduto() ? 'Produtos *' : 'Produtos (opcional)';
+    $('itens-leg').textContent = !tipoAtual() ? 'Produtos' : exigeProduto() ? 'Produtos *' : 'Produtos (opcional)';
   }
-  $('tipos').addEventListener('change', ajustarTipo);
+  $('f-motivo').addEventListener('change', ajustarTipo);
   ajustarTipo();
 
   function novaLinha() {
@@ -212,7 +211,11 @@
     d.innerHTML = `<span class="item-n" aria-hidden="true"></span>
       <label class="f c-sku">Código (SKU)<input type="text" data-k="sku" maxlength="60" autocomplete="off" inputmode="numeric" placeholder="Digite o código"></label>
       <label class="f c-desc">Descrição do produto<input type="text" data-k="produto" maxlength="200" autocomplete="off" placeholder="ou comece pelo nome"></label>
-      <label class="f c-qtd">Qtd.<input type="number" data-k="quantidade" min="0" step="1" inputmode="numeric"></label>
+      <div class="f c-qtd"><span>Quantidade</span><div class="qtd-un">
+        <input type="text" data-k="quantidade" inputmode="decimal" autocomplete="off" aria-label="Quantidade">
+        <select data-k="unidade" aria-label="Unidade de medida"><option value="un">un</option><option value="kg">kg</option></select>
+      </div></div>
+      <label class="f c-mot">Motivo deste produto<select data-k="motivo"><option value="">Selecione</option>${MOTIVOS_ITEM.map((m) => `<option>${esc(m)}</option>`).join('')}</select></label>
       <button class="item-rem" type="button" aria-label="Remover este produto">×</button>
       <ul class="sugestoes" role="listbox" aria-label="Produtos do catálogo" hidden></ul>`;
     $('itens').appendChild(d);
@@ -226,7 +229,8 @@
   function lerItens() {
     return Array.from($('itens').querySelectorAll('.item-linha')).map((l) => {
       const val = (k) => l.querySelector(`[data-k="${k}"]`).value.trim();
-      return { sku: val('sku'), produto: val('produto'), quantidade: val('quantidade') };
+      const q = lerQtd(val('quantidade'));
+      return { sku: val('sku'), produto: val('produto'), quantidade: q == null || Number.isNaN(q) ? '' : String(q), unidade: val('unidade'), motivo: val('motivo') };
     }).filter((i) => i.sku || i.produto);
   }
   function limparItens() { $('itens').innerHTML = ''; novaLinha(); }
@@ -392,7 +396,7 @@
     e.preventDefault();
     if (!sb) return;
     const v = (id) => $(id).value.trim();
-    const faltando = [['f-loja', 'nome da loja'], ['f-contato', 'seu nome'], ['f-whats', 'WhatsApp'], ['f-motivo', 'motivo'], ['f-desc', 'descrição']].filter(([id]) => !v(id));
+    const faltando = [['f-motivo', 'qual o problema'], ['f-loja', 'nome da loja'], ['f-contato', 'seu nome'], ['f-whats', 'WhatsApp'], ['f-desc', 'descrição']].filter(([id]) => !v(id));
     if (faltando.length) { $('form-msg').textContent = 'Preencha: ' + faltando.map((f) => f[1]).join(', ') + '.'; $(faltando[0][0]).focus(); return; }
     if (soDigitos(v('f-whats')).length < 10) { $('form-msg').textContent = 'Confira o WhatsApp: use DDD + número.'; $('f-whats').focus(); return; }
     const itens = lerItens();
@@ -400,6 +404,23 @@
       $('form-msg').textContent = 'Informe pelo menos um produto (código ou descrição).';
       $('itens').querySelector('input').focus();
       return;
+    }
+    // Quantidade: número com até 3 casas em kg; número inteiro em unidades.
+    const qtdRuim = Array.from($('itens').querySelectorAll('.item-linha')).find((l) => {
+      const q = lerQtd(l.querySelector('[data-k="quantidade"]').value);
+      return q != null && (Number.isNaN(q) || (l.querySelector('[data-k="unidade"]').value === 'un' && !Number.isInteger(q)));
+    });
+    if (qtdRuim) {
+      const kg = qtdRuim.querySelector('[data-k="unidade"]').value === 'kg';
+      $('form-msg').textContent = 'Confira a quantidade do produto ' + qtdRuim.querySelector('.item-n').textContent + (kg ? ': use números, como 2,5.' : ': em unidades, use um número inteiro (ou troque para kg).');
+      qtdRuim.querySelector('[data-k="quantidade"]').focus();
+      return;
+    }
+    // Em devolução e avaria, cada produto precisa do seu motivo (a análise é feita por produto).
+    if (exigeProduto()) {
+      const semMotivo = Array.from($('itens').querySelectorAll('.item-linha')).find((l) =>
+        (l.querySelector('[data-k="sku"]').value.trim() || l.querySelector('[data-k="produto"]').value.trim()) && !l.querySelector('[data-k="motivo"]').value);
+      if (semMotivo) { $('form-msg').textContent = 'Escolha o motivo do produto ' + semMotivo.querySelector('.item-n').textContent + '.'; semMotivo.querySelector('[data-k="motivo"]').focus(); return; }
     }
 
     const btn = $('btn-enviar');
@@ -418,7 +439,7 @@
       const tipo = tipoAtual();
       const loja = { nome: v('f-loja'), cnpj: v('f-cnpj'), cidade: v('f-cidade'), contato: v('f-contato'), whatsapp: v('f-whats') };
       const { data, error } = await sb.rpc('abrir_chamado', { dados: {
-        tipo, motivo: v('f-motivo'), loja_nome: loja.nome, loja_cnpj: loja.cnpj, loja_cidade: loja.cidade,
+        tipo, motivo: motivoAtual(), loja_nome: loja.nome, loja_cnpj: loja.cnpj, loja_cidade: loja.cidade,
         loja_contato: loja.contato, loja_whatsapp: loja.whatsapp, nf: v('f-nf'), descricao: v('f-desc'), itens, anexos,
         loja_codigo: lojaFixa ? lojaFixa.codigo : null
       } });
@@ -429,7 +450,7 @@
       rec.unshift({ protocolo, whatsapp: loja.whatsapp, tipo, em: new Date().toISOString() });
       store.set('sac.recentes', rec.slice(0, 30));
       ['f-nf', 'f-desc'].forEach((id) => { $(id).value = ''; });
-      limparItens(); limparAnexos(); $('f-motivo').value = ''; $('form-msg').textContent = '';
+      limparItens(); limparAnexos(); $('f-motivo').value = ''; ajustarTipo(); $('form-msg').textContent = '';
       $('suc-code').textContent = protocolo;
       $('suc-prazo').textContent = 'Primeira resposta em até ' + TIPOS[tipo].sla + ' horas.';
       $('form-area').hidden = true; $('sucesso').hidden = false;
@@ -495,7 +516,7 @@
       <div class="desc">${esc(t.descricao)}</div>
       ${(t.itens || []).length ? `<div class="box"><h3>Produtos</h3>
         <ul class="itens-res">${t.itens.map((i) => `<li>
-          <div class="ir-prod"><b class="mono">${esc(i.sku || 'Sem código')}</b> ${esc(i.produto || '')}${i.quantidade != null ? ` <span class="muted">· ${esc(i.quantidade)} un.</span>` : ''}</div>
+          <div class="ir-prod"><b class="mono">${esc(i.sku || 'Sem código')}</b> ${esc(i.produto || '')}${i.quantidade != null ? ` <span class="muted">· ${esc(fmtQtd(i.quantidade, i.unidade))}</span>` : ''}${i.motivo ? `<span class="ir-mot">${esc(i.motivo)}</span>` : ''}</div>
           <span class="dec dec-${esc(i.decisao)}">${esc(decisaoTexto(i))}</span>
           ${i.justificativa ? `<div class="ir-just">${esc(i.justificativa)}</div>` : ''}</li>`).join('')}</ul>
       </div>` : ''}

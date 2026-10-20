@@ -347,3 +347,24 @@ span.f small { font-weight: 400; color: var(--muted); }
 @media (max-width: 620px) { .pr-row { grid-template-columns: minmax(0, 1fr); } .pr-row .lj-acoes { justify-content: flex-start; } }
 .filters.dois { grid-template-columns: minmax(0, 1fr) 200px; }
 @media (max-width: 620px) { .filters.dois { grid-template-columns: minmax(0, 1fr); } }
+
+/* Motivo por produto */
+.item-linha { grid-template-areas: "n sku desc qtd rem" ". mot mot mot ."; }
+.item-linha .item-n { grid-area: n; } .item-linha .c-sku { grid-area: sku; } .item-linha .c-desc { grid-area: desc; }
+.item-linha .c-qtd { grid-area: qtd; } .item-linha .item-rem { grid-area: rem; } .item-linha .c-mot { grid-area: mot; }
+.item-linha select { background: var(--surface); }
+.ir-mot { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); font-size: 12px; font-weight: 600; vertical-align: 1px; }
+@media (max-width: 620px) {
+  .item-linha { grid-template-columns: 28px minmax(0, 1fr) 80px; grid-template-areas: "n sku qtd" "rem desc desc" ". mot mot"; }
+  .item-linha .c-desc, .item-linha .c-sku, .item-linha .c-qtd, .item-linha .item-n, .item-linha .item-rem { grid-column: auto; grid-row: auto; }
+}
+/* As sugestões abrem logo abaixo dos campos de código e nome, por cima do motivo. */
+.item-linha .sugestoes { grid-area: mot; top: -4px; left: 0; right: 0; }
+
+/* Quantidade com unidade (un / kg) */
+.item-linha { grid-template-columns: 28px minmax(0, 1fr) minmax(0, 2fr) 150px 32px; }
+.qtd-un { display: flex; }
+.qtd-un input { border-top-right-radius: 0; border-bottom-right-radius: 0; min-width: 0; }
+.qtd-un select { width: auto; flex: none; border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; padding-inline: 8px; font-weight: 600; background: var(--surface-2); }
+@media (max-width: 620px) { .item-linha { grid-template-columns: 28px minmax(0, 1fr) 132px; } }
+div.f { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px; min-width: 0; }

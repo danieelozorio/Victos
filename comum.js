@@ -2,13 +2,13 @@
 (function () {
   const TIPOS = {
     reclamacao: { rot: 'Reclamação', dica: 'Produto, entrega ou atendimento', sla: 48,
-      motivos: ['Atraso na entrega', 'Qualidade do produto', 'Atendimento', 'Cobrança / boleto', 'Outro'] },
+      motivos: ['Atraso na entrega', 'Qualidade do produto', 'Atendimento', 'Cobrança / boleto', 'Outra reclamação'] },
     devolucao: { rot: 'Devolução / troca', dica: 'Com nota fiscal e motivo', sla: 72,
-      motivos: ['Produto com defeito', 'Produto errado', 'Quantidade divergente', 'Validade próxima', 'Produto parado (encalhe)', 'Outro'] },
+      motivos: ['Produto com defeito', 'Produto errado', 'Quantidade divergente', 'Validade próxima', 'Produto parado (encalhe)', 'Outro motivo de devolução'] },
     avaria: { rot: 'Avaria no transporte', dica: 'Chegou danificado', sla: 24,
-      motivos: ['Embalagem danificada', 'Produto quebrado', 'Produto molhado', 'Volume faltando', 'Outro'] },
+      motivos: ['Embalagem danificada', 'Produto quebrado', 'Produto molhado', 'Volume faltando', 'Outra avaria'] },
     duvida: { rot: 'Dúvida / pedido', dica: 'Boleto, nota, prazo', sla: 24,
-      motivos: ['2ª via de boleto', '2ª via de nota fiscal', 'Status do pedido', 'Prazo de entrega', 'Outro'] }
+      motivos: ['2ª via de boleto', '2ª via de nota fiscal', 'Status do pedido', 'Prazo de entrega', 'Outra dúvida'] }
   };
   const STATUS = {
     novo: 'Novo', analise: 'Em análise', aguardando: 'Aguardando loja',
@@ -16,6 +16,9 @@
   };
   const ABERTOS = ['novo', 'analise', 'aguardando', 'aprovado'];
   const PRIORIDADES = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' };
+  // Motivo de cada produto do chamado (um SKU pode estar em falta e outro com falta de peso).
+  const MOTIVOS_ITEM = ['Falta (quantidade menor)', 'Falta de peso', 'Qualidade', 'Avaria / quebrado', 'Embalagem danificada',
+    'Validade vencida ou próxima', 'Produto errado', 'Produto com defeito', 'Sobra (veio a mais)', 'Outro'];
   const DECISOES = { pendente: 'Em análise', aceito: 'Aceito', recusado: 'Recusado' };
   // Fotos e vídeos aceitos: tipo do arquivo -> extensão usada no armazenamento.
   const MIME_EXT = {
@@ -33,10 +36,23 @@
     return EXT_MIME[ext] ? { mime: EXT_MIME[ext], ext: MIME_EXT[EXT_MIME[ext]] } : null;
   }
   function tamanho(bytes) { return bytes >= 1048576 ? (bytes / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB'; }
-  // Texto da decisão de um produto, como "Aceito · 4 de 6 un.".
+  // Quantidade com a unidade: "6 un." ou "2,5 kg".
+  const fmtNum = (q) => Number(q).toLocaleString('pt-BR', { maximumFractionDigits: 3 });
+  function fmtQtd(q, unidade) {
+    if (q == null || q === '') return '';
+    return fmtNum(q) + (unidade === 'kg' ? ' kg' : ' un.');
+  }
+  // Lê "2,5" ou "2.5"; devolve null se vazio e NaN se não for número.
+  function lerQtd(txt) {
+    const t = String(txt == null ? '' : txt).trim().replace(/\s/g, '').replace(',', '.');
+    if (!t) return null;
+    return /^\d+(\.\d{1,3})?$/.test(t) ? Number(t) : NaN;
+  }
+  // Texto da decisão de um produto, como "Aceito · 4 de 6 un." ou "Aceito · 1,8 de 2,5 kg".
   function decisaoTexto(i) {
     let t = DECISOES[i.decisao] || i.decisao;
-    if (i.decisao === 'aceito' && i.qtd_aceita != null && i.quantidade != null && i.qtd_aceita < i.quantidade) t += ' · ' + i.qtd_aceita + ' de ' + i.quantidade + ' un.';
+    if (i.decisao === 'aceito' && i.qtd_aceita != null && i.quantidade != null && Number(i.qtd_aceita) < Number(i.quantidade))
+      t += ' · ' + fmtNum(i.qtd_aceita) + ' de ' + fmtQtd(i.quantidade, i.unidade);
     return t;
   }
 
@@ -110,8 +126,8 @@
   }
 
   function configPendente() {
-    return '<div class="banner"><div><b>Site ainda não conectado ao banco de dados.</b> Preencha o arquivo <span class="mono">config.js</span> com a URL e a chave do Supabase (veja o passo a passo no LEIAME).</div></div>';
+    return '<div class="banner"><div><b>Site ainda não conectado ao banco de dados.</b> Preencha o arquivo <span class="mono">config.js</span> com a URL e a chave do Supabase (veja o passo a passo no README).</div></div>';
   }
 
-  window.SAC = { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, MIME_EXT, MAX_ARQUIVO, ehVideo, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, dur, quando, waNumero, foneBonito, toast, copiar, cliente, mensagemErro, configPendente };
+  window.SAC = { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, MOTIVOS_ITEM, fmtNum, fmtQtd, lerQtd, MIME_EXT, MAX_ARQUIVO, ehVideo, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, dur, quando, waNumero, foneBonito, toast, copiar, cliente, mensagemErro, configPendente };
 })();

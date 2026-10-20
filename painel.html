@@ -230,7 +230,7 @@
 <script src="comum.js"></script>
 <script>
 (function () {
-  const { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, ehVideo, decisaoTexto, $, esc, soDigitos, prazoDe, prazoInfo, quando, waNumero, foneBonito, toast, copiar, mensagemErro } = window.SAC;
+  const { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, ehVideo, decisaoTexto, fmtNum, fmtQtd, lerQtd, $, esc, soDigitos, prazoDe, prazoInfo, quando, waNumero, foneBonito, toast, copiar, mensagemErro } = window.SAC;
   const cfg = window.SAC_CONFIG || {};
   const sb = window.SAC.cliente();
   const S = { uid: null, email: '', tickets: [], equipe: {}, view: 'fila', aberto: null, msgs: [], midias: [], renderPendente: false, filtro: { q: '', status: 'abertos', tipo: '' }, ocupado: false, canal: null, ultimaResposta: '' };
@@ -423,7 +423,7 @@
     return `<div class="box"><h3>Produtos · ${itens.length}${pend ? ` <span class="muted" style="text-transform:none;letter-spacing:0">(${pend} a decidir)</span>` : ''}</h3>
       ${itens.map((i) => `<div class="item-dec" data-item="${i.id}">
         <div class="id-top">
-          <div class="ir-prod"><b class="mono">${esc(i.sku || 'Sem código')}</b> ${esc(i.produto || '')}${i.quantidade != null ? ` <span class="muted">· ${esc(i.quantidade)} un.</span>` : ''}</div>
+          <div class="ir-prod"><b class="mono">${esc(i.sku || 'Sem código')}</b> ${esc(i.produto || '')}${i.quantidade != null ? ` <span class="muted">· ${esc(fmtQtd(i.quantidade, i.unidade))}</span>` : ''}${i.motivo ? `<span class="ir-mot">${esc(i.motivo)}</span>` : ''}</div>
           <span class="dec dec-${esc(i.decisao)}">${esc(decisaoTexto(i))}</span>
         </div>
         ${i.justificativa ? `<div class="ir-just">${esc(i.justificativa)}</div>` : ''}
@@ -433,7 +433,7 @@
             <button type="button" data-dec="recusado" aria-pressed="${i.decisao === 'recusado'}">Recusar</button>
             <button type="button" data-dec="pendente" aria-pressed="${i.decisao === 'pendente'}">Pendente</button>
           </div>
-          <label class="f id-qtd" ${i.decisao === 'aceito' ? '' : 'hidden'}>Qtd. aceita<input type="number" min="0" step="1" inputmode="numeric" data-campo="qtd" value="${esc(i.qtd_aceita ?? i.quantidade ?? '')}"></label>
+          <label class="f id-qtd" ${i.decisao === 'aceito' ? '' : 'hidden'}>Qtd. aceita (${i.unidade === 'kg' ? 'kg' : 'un'})<input type="text" inputmode="decimal" data-campo="qtd" value="${esc((i.qtd_aceita ?? i.quantidade) != null ? fmtNum(i.qtd_aceita ?? i.quantidade) : '')}"></label>
           <label class="f id-just">Justificativa<input type="text" maxlength="500" data-campo="just" value="${esc(i.justificativa || '')}" placeholder="Ex.: fora do prazo de troca"></label>
           <button class="btn small primary" type="button" data-salvar>Salvar</button>
         </div>
@@ -575,9 +575,10 @@
     const justificativa = box.querySelector('[data-campo="just"]').value.trim() || null;
     let qtd_aceita = null;
     if (decisao === 'aceito') {
-      qtd_aceita = qtdTxt === '' ? item.quantidade : Math.max(0, Math.floor(Number(qtdTxt)));
-      if (qtd_aceita != null && item.quantidade != null && qtd_aceita > item.quantidade) { toast('A quantidade aceita não pode passar de ' + item.quantidade + '.'); return; }
-      if (qtd_aceita === 0) { toast('Para não aceitar nenhuma unidade, use "Recusar".'); return; }
+      qtd_aceita = qtdTxt === '' ? item.quantidade : lerQtd(qtdTxt);
+      if (Number.isNaN(qtd_aceita) || (item.unidade !== 'kg' && qtd_aceita != null && !Number.isInteger(Number(qtd_aceita)))) { toast(item.unidade === 'kg' ? 'Use um número na quantidade aceita, como 1,8.' : 'Em unidades, a quantidade aceita é um número inteiro.'); return; }
+      if (qtd_aceita != null && item.quantidade != null && Number(qtd_aceita) > Number(item.quantidade)) { toast('A quantidade aceita não pode passar de ' + fmtQtd(item.quantidade, item.unidade) + '.'); return; }
+      if (Number(qtd_aceita) === 0) { toast('Para não aceitar nenhuma unidade, use "Recusar".'); return; }
     }
     if (decisao === 'recusado' && !justificativa) { toast('Escreva a justificativa da recusa; a loja vai ver.'); box.querySelector('[data-campo="just"]').focus(); return; }
     S.ocupado = true;
@@ -586,7 +587,7 @@
       if (error) throw error;
       Object.assign(item, { decisao, qtd_aceita, justificativa });
       const nomeItem = [item.sku, item.produto].filter(Boolean).join(' · ');
-      const parcial = decisao === 'aceito' && qtd_aceita != null && item.quantidade != null && qtd_aceita < item.quantidade ? ` (${qtd_aceita} de ${item.quantidade} un.)` : '';
+      const parcial = decisao === 'aceito' && qtd_aceita != null && item.quantidade != null && Number(qtd_aceita) < Number(item.quantidade) ? ` (${fmtNum(qtd_aceita)} de ${fmtQtd(item.quantidade, item.unidade)})` : '';
       const texto = decisao === 'pendente' ? 'Produto ' + nomeItem + ' voltou para análise'
         : 'Produto ' + nomeItem + ': ' + (decisao === 'aceito' ? 'aceito' : 'recusado') + parcial + (justificativa ? '. Motivo: ' + justificativa : '');
       await sb.from('mensagens').insert({ chamado_id: t.id, autor: 'sistema', autor_id: S.uid, interna: false, texto });
@@ -604,12 +605,12 @@
 
   // ---------- exportação ----------
   $('btn-csv').addEventListener('click', () => {
-    const cols = ['Protocolo', 'Tipo', 'Motivo', 'Status', 'Prioridade', 'Loja', 'CNPJ', 'Cidade', 'Contato', 'WhatsApp', 'Nota/Pedido', 'SKU', 'Produto', 'Quantidade', 'Decisão', 'Qtd. aceita', 'Justificativa', 'Descrição', 'Responsável', 'Aberto em', 'Prazo', 'Atualizado em', 'Atrasado'];
+    const cols = ['Protocolo', 'Tipo', 'Motivo', 'Status', 'Prioridade', 'Loja', 'CNPJ', 'Cidade', 'Contato', 'WhatsApp', 'Nota/Pedido', 'SKU', 'Produto', 'Quantidade', 'Unidade', 'Motivo do produto', 'Decisão', 'Qtd. aceita', 'Justificativa', 'Descrição', 'Responsável', 'Aberto em', 'Prazo', 'Atualizado em', 'Atrasado'];
     const cel = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
     // Uma linha por produto, para dar para filtrar e somar as devoluções aceitas na planilha.
     const linhas = filtrados().flatMap((t) => ((t.itens || []).length ? t.itens : [{}]).map((i) => [t.protocolo, TIPOS[t.tipo]?.rot, t.motivo, STATUS[t.status], PRIORIDADES[t.prioridade],
-      t.loja_nome, t.loja_cnpj, t.loja_cidade, t.loja_contato, foneBonito(t.loja_whatsapp), t.nf, i.sku, i.produto, i.quantidade,
-      i.decisao ? DECISOES[i.decisao] : '', i.qtd_aceita, i.justificativa, t.descricao, t.responsavel ? nome(t.responsavel) : '', quando(t.criado_em),
+      t.loja_nome, t.loja_cnpj, t.loja_cidade, t.loja_contato, foneBonito(t.loja_whatsapp), t.nf, i.sku, i.produto, i.quantidade != null ? String(Number(i.quantidade)).replace('.', ',') : '', i.quantidade != null ? (i.unidade || 'un') : '', i.motivo,
+      i.decisao ? DECISOES[i.decisao] : '', i.qtd_aceita != null ? String(Number(i.qtd_aceita)).replace('.', ',') : '', i.justificativa, t.descricao, t.responsavel ? nome(t.responsavel) : '', quando(t.criado_em),
       quando(prazoDe(t).toISOString()), quando(t.atualizado_em), prazoInfo(t).atrasado ? 'Sim' : 'Não'].map(cel).join(';')));
     const blob = new Blob(['﻿' + cols.map(cel).join(';') + '\n' + linhas.join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');

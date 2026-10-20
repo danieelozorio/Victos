@@ -2,13 +2,13 @@
 (function () {
   const TIPOS = {
     reclamacao: { rot: 'Reclamação', dica: 'Produto, entrega ou atendimento', sla: 48,
-      motivos: ['Atraso na entrega', 'Qualidade do produto', 'Atendimento', 'Cobrança / boleto', 'Outro'] },
+      motivos: ['Atraso na entrega', 'Qualidade do produto', 'Atendimento', 'Cobrança / boleto', 'Outra reclamação'] },
     devolucao: { rot: 'Devolução / troca', dica: 'Com nota fiscal e motivo', sla: 72,
-      motivos: ['Produto com defeito', 'Produto errado', 'Quantidade divergente', 'Validade próxima', 'Produto parado (encalhe)', 'Outro'] },
+      motivos: ['Produto com defeito', 'Produto errado', 'Quantidade divergente', 'Validade próxima', 'Produto parado (encalhe)', 'Outro motivo de devolução'] },
     avaria: { rot: 'Avaria no transporte', dica: 'Chegou danificado', sla: 24,
-      motivos: ['Embalagem danificada', 'Produto quebrado', 'Produto molhado', 'Volume faltando', 'Outro'] },
+      motivos: ['Embalagem danificada', 'Produto quebrado', 'Produto molhado', 'Volume faltando', 'Outra avaria'] },
     duvida: { rot: 'Dúvida / pedido', dica: 'Boleto, nota, prazo', sla: 24,
-      motivos: ['2ª via de boleto', '2ª via de nota fiscal', 'Status do pedido', 'Prazo de entrega', 'Outro'] }
+      motivos: ['2ª via de boleto', '2ª via de nota fiscal', 'Status do pedido', 'Prazo de entrega', 'Outra dúvida'] }
   };
   const STATUS = {
     novo: 'Novo', analise: 'Em análise', aguardando: 'Aguardando loja',
@@ -110,7 +110,7 @@
   }
 
   function configPendente() {
-    return '<div class="banner"><div><b>Site ainda não conectado ao banco de dados.</b> Preencha o arquivo <span class="mono">config.js</span> com a URL e a chave do Supabase (veja o passo a passo no LEIAME).</div></div>';
+    return '<div class="banner"><div><b>Site ainda não conectado ao banco de dados.</b> Preencha o arquivo <span class="mono">config.js</span> com a URL e a chave do Supabase (veja o passo a passo no README).</div></div>';
   }
 
   window.SAC = { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, MIME_EXT, MAX_ARQUIVO, ehVideo, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, dur, quando, waNumero, foneBonito, toast, copiar, cliente, mensagemErro, configPendente };

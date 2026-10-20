@@ -322,7 +322,10 @@ as $$
                 else 3 end as ordem
       from public.produtos p, b
      where p.ativo and length(b.q) >= 2
-       and (lower(p.sku) like lower(b.q) || '%' or public.sem_acento(p.nome) like '%' || b.qn || '%')
+       -- Pelo código, ou pelo nome com todas as palavras digitadas, em qualquer ordem ("ovo sonia" acha "OVO OVOS SONIA").
+       and (lower(p.sku) like lower(b.q) || '%'
+            or not exists (select 1 from unnest(string_to_array(b.qn, ' ')) w
+                            where w <> '' and public.sem_acento(p.nome) not like '%' || w || '%'))
      order by ordem, p.nome
      limit least(greatest(coalesce(p_limite, 8), 1), 20)
   ) r;

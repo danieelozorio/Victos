@@ -63,3 +63,4 @@ São 500 MB de banco e 1 GB de fotos, o bastante para milhares de chamados. Um p
 - `comum.js`, `estilo.css`: partes compartilhadas
 - `config.js`: a sua configuração do Supabase
 - `supabase.sql`: estrutura e regras de segurança do banco
+- `img/`: logos da Victos (versões para fundo claro e escuro), ícone do site e selo do Grupo UniSuper

@@ -4,20 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>Painel SAC</title>
+<title>Painel SAC Victos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Open+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
 <link rel="stylesheet" href="estilo.css">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<link rel="apple-touch-icon" href="img/victos-icone.png">
+<meta name="theme-color" content="#e8541e">
 </head>
 <body>
 
 <header class="top">
   <div class="wrap">
-    <div class="brand">
-      <div class="stub" aria-hidden="true"></div>
-      <div class="brand-txt"><b>Painel SAC</b><span id="empresa-nome">Equipe de atendimento</span></div>
-    </div>
+    <a class="brand" href="painel.html">
+      <picture>
+        <source srcset="img/victos-logo-escuro.png" media="(prefers-color-scheme: dark)">
+        <img class="logo" src="img/victos-logo.png" alt="Victos Alimentos e Logística" width="720" height="212">
+      </picture>
+      <span class="brand-sub">Painel SAC</span>
+    </a>
     <nav class="tabs" id="tabs" aria-label="Seções" hidden>
       <button class="tab" type="button" data-view="fila" aria-current="page">Fila <span class="n" id="n-atrasados" hidden></span></button>
       <button class="tab" type="button" data-view="link">Link para as lojas</button>
@@ -106,6 +112,13 @@
   </aside>
 </div>
 
+<footer class="rodape">
+  <div class="wrap">
+    <span>Victos Alimentos e Logística · Central de atendimento às lojas</span>
+    <span class="grupo">Uma empresa do <span class="selo"><img src="img/unisuper-logo.png" alt="Grupo UniSuper" width="153" height="80"></span></span>
+  </div>
+</footer>
+
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -120,8 +133,7 @@
   const S = { uid: null, email: '', tickets: [], equipe: {}, view: 'fila', aberto: null, msgs: [], fotos: [], filtro: { q: '', status: 'abertos', tipo: '' }, ocupado: false, canal: null, ultimaResposta: '' };
   const linkLoja = new URL('./', location.href).href;
 
-  if (cfg.empresa) $('empresa-nome').textContent = cfg.empresa;
-  if (!sb) { $('banners').innerHTML = window.SAC.configPendente(); return; }
+    if (!sb) { $('banners').innerHTML = window.SAC.configPendente(); return; }
 
   function mostrar(sec) {
     ['login', 'negado', 'fila', 'link'].forEach((v) => { $('v-' + v).hidden = v !== sec; });

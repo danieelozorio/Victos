@@ -3,21 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Central SAC Lojas</title>
+<title>SAC Victos</title>
 <meta name="description" content="Abra e acompanhe reclamações, devoluções, avarias e dúvidas.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Open+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
 <link rel="stylesheet" href="estilo.css">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<link rel="apple-touch-icon" href="img/victos-icone.png">
+<meta name="theme-color" content="#e8541e">
 </head>
 <body>
 
 <header class="top">
   <div class="wrap">
-    <div class="brand">
-      <div class="stub" aria-hidden="true"></div>
-      <div class="brand-txt"><b>Central SAC</b><span id="empresa-nome">Atendimento às lojas</span></div>
-    </div>
+    <a class="brand" href="./">
+      <picture>
+        <source srcset="img/victos-logo-escuro.png" media="(prefers-color-scheme: dark)">
+        <img class="logo" src="img/victos-logo.png" alt="Victos Alimentos e Logística" width="720" height="212">
+      </picture>
+      <span class="brand-sub">Central SAC</span>
+    </a>
     <nav class="tabs" aria-label="Seções">
       <button class="tab" type="button" data-view="novo" aria-current="page">Abrir chamado</button>
       <button class="tab" type="button" data-view="acompanhar">Acompanhar chamado</button>
@@ -131,6 +137,13 @@
   </section>
 </main>
 
+<footer class="rodape">
+  <div class="wrap">
+    <span>Victos Alimentos e Logística · Central de atendimento às lojas</span>
+    <span class="grupo">Uma empresa do <span class="selo"><img src="img/unisuper-logo.png" alt="Grupo UniSuper" width="153" height="80"></span></span>
+  </div>
+</footer>
+
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -145,7 +158,7 @@
   const MIME_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic' };
   let atual = null; // chamado aberto na consulta: {protocolo, whatsapp}
 
-  if (cfg.empresa) { $('empresa-nome').textContent = cfg.empresa; document.title = 'SAC · ' + cfg.empresa; }
+  if (cfg.empresa) document.title = 'SAC · ' + cfg.empresa;
   if (cfg.whatsappSac) { $('sac-fone').hidden = false; $('sac-fone').textContent = 'Urgente? Fale com o SAC pelo WhatsApp ' + cfg.whatsappSac + '.'; }
   if (!sb) { $('banners').innerHTML = window.SAC.configPendente(); $('btn-enviar').disabled = true; $('btn-consultar').disabled = true; }
 

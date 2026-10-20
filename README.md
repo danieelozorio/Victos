@@ -1,4 +1,8 @@
-# Central SAC: como colocar no ar
+# Central SAC Victos
+
+Site de atendimento às lojas da Victos: reclamações, devoluções, avarias e dúvidas.
+
+## Como colocar no ar
 
 O site tem duas partes:
 
@@ -27,16 +31,16 @@ Os dados ficam no **Supabase** (banco de dados gratuito) e o site fica no **GitH
 
 ## 2. Ligar o site ao banco
 
-Em **Project Settings > API** (ou **Data API**), copie a **Project URL** e a chave **anon public**. Cole as duas em `config.js`, junto com o nome da empresa.
+Em **Project Settings > API** (ou **Data API**), copie a **Project URL** e a chave **anon public**. Cole as duas em `config.js`. O nome da empresa já está como Victos.
 
 A chave `anon` pode ficar no site: quem protege os dados são as regras do `supabase.sql`. **Nunca** use a chave `service_role` no site.
 
 ## 3. Publicar
 
-Com o GitHub Pages ativo na branch `main`, os endereços ficam assim:
+Com o GitHub Pages ativo na branch `main` (Settings > Pages > Deploy from a branch > `main` / `root`), os endereços ficam assim:
 
-- Lojas: `https://danieelozorio.github.io/NevoaViamor/sac/`
-- Equipe: `https://danieelozorio.github.io/NevoaViamor/sac/painel.html`
+- Lojas: `https://danieelozorio.github.io/Victos/`
+- Equipe: `https://danieelozorio.github.io/Victos/painel.html`
 
 No painel, a aba **Link para as lojas** tem o link, uma mensagem pronta para mandar no WhatsApp e um QR code para imprimir.
 
@@ -53,9 +57,9 @@ São 500 MB de banco e 1 GB de fotos, o bastante para milhares de chamados. Um p
 
 ## Arquivos
 
+
 - `index.html`: página das lojas
 - `painel.html`: painel da equipe
 - `comum.js`, `estilo.css`: partes compartilhadas
 - `config.js`: a sua configuração do Supabase
 - `supabase.sql`: estrutura e regras de segurança do banco
-- `versao-claude.html`: a primeira versão, feita como app dentro do claude.ai

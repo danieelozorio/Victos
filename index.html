@@ -1,227 +1,321 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+<!doctype html>
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Névoa de Viamor</title>
-
-<style>
-body {
-  background: radial-gradient(circle, #0a0a0a, #000);
-  color: #d6d6d6;
-  font-family: Arial;
-  padding: 15px;
-}
-
-h1, h2 {
-  color: #8f8f8f;
-}
-
-input, textarea {
-  width: 100%;
-  padding: 8px;
-  margin: 5px 0;
-  background: #111;
-  border: 1px solid #333;
-  color: white;
-}
-
-button {
-  padding: 10px;
-  margin: 5px;
-  background: #1a1a1a;
-  color: white;
-  border: 1px solid #333;
-}
-
-.box {
-  margin-bottom: 20px;
-  padding: 10px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid #222;
-}
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Central SAC Lojas</title>
+<meta name="description" content="Abra e acompanhe reclamações, devoluções, avarias e dúvidas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="estilo.css">
 </head>
-
 <body>
 
-<h1>🌫️ Névoa de Viamor</h1>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="stub" aria-hidden="true"></div>
+      <div class="brand-txt"><b>Central SAC</b><span id="empresa-nome">Atendimento às lojas</span></div>
+    </div>
+    <nav class="tabs" aria-label="Seções">
+      <button class="tab" type="button" data-view="novo" aria-current="page">Abrir chamado</button>
+      <button class="tab" type="button" data-view="acompanhar">Acompanhar chamado</button>
+    </nav>
+  </div>
+</header>
 
-<div id="loginBox" class="box">
-<h2>Entrar</h2>
-<input id="nomeJogador" placeholder="Nome do jogador">
-<button onclick="entrar()">Entrar</button>
-</div>
+<main class="wrap">
+  <div id="banners"></div>
 
-<div id="app" style="display:none">
+  <!-- Abrir chamado -->
+  <section id="v-novo">
+    <div class="grid-form" id="form-area">
+      <form class="card" id="form" novalidate>
+        <h2>Abrir chamado</h2>
+        <p class="lead">Registre aqui reclamações, devoluções, avarias e dúvidas. Você recebe um número de protocolo e acompanha a resposta na aba <b>Acompanhar chamado</b>.</p>
 
-<div class="box">
-<h2>Personagem</h2>
-<input id="nome" placeholder="Nome">
-<input id="classe" placeholder="Classe">
-<input id="idade" placeholder="Idade">
-<input id="aparencia" placeholder="Aparência">
-</div>
+        <fieldset>
+          <legend>Tipo de atendimento</legend>
+          <div class="tipos" id="tipos"></div>
+        </fieldset>
 
-<div class="box">
-<h2>Atributos</h2>
+        <fieldset>
+          <legend>Dados da loja</legend>
+          <div class="fields">
+            <label class="f full"><span>Nome da loja <span class="req">*</span></span><input type="text" id="f-loja" autocomplete="organization" maxlength="200" required></label>
+            <label class="f">CNPJ<input type="text" id="f-cnpj" inputmode="numeric" maxlength="30" placeholder="00.000.000/0000-00"></label>
+            <label class="f">Cidade / UF<input type="text" id="f-cidade" maxlength="120" placeholder="Ex.: Campinas / SP"></label>
+            <label class="f"><span>Seu nome <span class="req">*</span></span><input type="text" id="f-contato" autocomplete="name" maxlength="120" required></label>
+            <label class="f"><span>WhatsApp para retorno <span class="req">*</span></span><input type="tel" id="f-whats" inputmode="tel" autocomplete="tel" placeholder="(11) 98765-4321" required></label>
+          </div>
+        </fieldset>
 
-<label>Força</label>
-<input type="number" id="forca">
+        <fieldset>
+          <legend>Detalhes</legend>
+          <div class="fields">
+            <label class="f"><span>Motivo <span class="req">*</span></span><select id="f-motivo" required></select></label>
+            <label class="f">Nº da nota fiscal ou pedido<input type="text" id="f-nf" maxlength="60"></label>
+            <label class="f">Produto / código (SKU)<input type="text" id="f-produto" maxlength="200"></label>
+            <label class="f">Quantidade<input type="number" id="f-qtd" min="0" step="1" inputmode="numeric"></label>
+            <label class="f full"><span>Descreva o que aconteceu <span class="req">*</span></span><textarea id="f-desc" maxlength="4000" required placeholder="Ex.: Recebemos 3 caixas do pedido 4521; uma veio com a embalagem rasgada e 6 unidades quebradas."></textarea></label>
+            <div class="f full">
+              <label class="f" for="f-fotos">Fotos <small>Até 6 imagens de até 8 MB. Para avaria, fotografe a embalagem e o produto.</small></label>
+              <div class="drop">
+                <input type="file" id="f-fotos" accept="image/jpeg,image/png,image/webp,image/heic" multiple>
+                <div class="thumbs" id="thumbs"></div>
+              </div>
+            </div>
+          </div>
+        </fieldset>
 
-<label>Agilidade</label>
-<input type="number" id="agi">
+        <div class="actions">
+          <button class="btn primary" type="submit" id="btn-enviar">Enviar chamado</button>
+          <span class="muted" id="form-msg" role="status"></span>
+        </div>
+      </form>
 
-<label>Mente</label>
-<input type="number" id="mente">
+      <aside class="card aside">
+        <h3>Como funciona</h3>
+        <ol>
+          <li>Você envia o chamado e recebe um protocolo.</li>
+          <li>Nossa equipe analisa e responde por aqui e pelo WhatsApp.</li>
+          <li>Se precisarmos de algo, o status muda para <b>Aguardando loja</b>.</li>
+          <li>Devoluções aprovadas recebem as instruções de coleta ou envio.</li>
+        </ol>
+        <div class="sla" id="sla-list"></div>
+        <p class="muted" id="sac-fone" hidden></p>
+      </aside>
+    </div>
 
-<label>Presença</label>
-<input type="number" id="pres">
-</div>
+    <div id="sucesso" hidden>
+      <div class="ticket">
+        <div class="left">Protocolo</div>
+        <div class="right">
+          <span class="muted">Chamado registrado. Guarde este número:</span>
+          <span class="code mono" id="suc-code"></span>
+          <span class="muted" id="suc-prazo"></span>
+          <div class="actions" style="margin-top:4px">
+            <button class="btn" type="button" id="suc-copiar">Copiar protocolo</button>
+            <button class="btn" type="button" id="suc-ver">Acompanhar este chamado</button>
+            <button class="btn primary" type="button" id="suc-novo">Abrir outro chamado</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<div class="box">
-<h2>Status</h2>
+  <!-- Acompanhar -->
+  <section id="v-acompanhar" hidden>
+    <div class="grid-form">
+      <div style="display:grid;gap:18px;min-width:0">
+        <form class="card" id="consulta" novalidate>
+          <h2>Acompanhar chamado</h2>
+          <p class="lead">Informe o protocolo e o WhatsApp usado na abertura.</p>
+          <div class="fields" style="margin-top:16px">
+            <label class="f">Protocolo<input type="text" id="c-proto" class="mono" placeholder="SAC-261020-K7QM" autocapitalize="characters" required></label>
+            <label class="f">WhatsApp<input type="tel" id="c-whats" inputmode="tel" placeholder="(11) 98765-4321" required></label>
+          </div>
+          <div class="actions">
+            <button class="btn primary" type="submit" id="btn-consultar">Consultar</button>
+            <span class="muted" id="c-msg" role="status"></span>
+          </div>
+        </form>
+        <div id="resultado"></div>
+      </div>
+      <aside class="card aside">
+        <h3>Chamados deste aparelho</h3>
+        <div id="recentes"></div>
+      </aside>
+    </div>
+  </section>
+</main>
 
-<p>Vida: <span id="vida">20</span></p>
-<button onclick="vida++; salvar()">+</button>
-<button onclick="vida--; salvar()">-</button>
+<div class="toast" id="toast" role="status" hidden></div>
 
-<p>Memória: <span id="memoria">10</span></p>
-<button onclick="if(memoria<10){memoria++}; salvar()">+</button>
-<button onclick="if(memoria>0){memoria--}; salvar()">-</button>
-
-</div>
-
-<div class="box">
-<h2>Defesa</h2>
-<p id="defesa">10</p>
-</div>
-
-<div class="box">
-<h2>Combate</h2>
-<input id="arma" placeholder="Arma">
-<input id="dano" placeholder="Dano">
-<p>d20 + ______ (atributo)</p>
-</div>
-
-<div class="box">
-<h2>Habilidades</h2>
-<textarea id="habilidades"></textarea>
-</div>
-
-<div class="box">
-<h2>Âncora</h2>
-<input id="ancora">
-</div>
-
-<div class="box">
-<h2>Inventário</h2>
-<input id="item1">
-<input id="item2">
-<input id="item3">
-</div>
-
-<div class="box">
-<h2>Memórias</h2>
-<textarea id="memorias"></textarea>
-</div>
-
-</div>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="comum.js"></script>
 <script>
+(function () {
+  const { TIPOS, STATUS, $, esc, soDigitos, store, prazoDe, prazoInfo, quando, foneBonito, toast, copiar, mensagemErro } = window.SAC;
+  const cfg = window.SAC_CONFIG || {};
+  const sb = window.SAC.cliente();
+  const MAX_FOTOS = 6;
+  const MIME_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic' };
+  let atual = null; // chamado aberto na consulta: {protocolo, whatsapp}
 
-let jogador = "";
-let vida = 20;
-let memoria = 10;
+  if (cfg.empresa) { $('empresa-nome').textContent = cfg.empresa; document.title = 'SAC · ' + cfg.empresa; }
+  if (cfg.whatsappSac) { $('sac-fone').hidden = false; $('sac-fone').textContent = 'Urgente? Fale com o SAC pelo WhatsApp ' + cfg.whatsappSac + '.'; }
+  if (!sb) { $('banners').innerHTML = window.SAC.configPendente(); $('btn-enviar').disabled = true; $('btn-consultar').disabled = true; }
 
-function entrar() {
-  jogador = document.getElementById("nomeJogador").value;
+  // ---------- abas ----------
+  function irPara(v) {
+    document.querySelectorAll('.tab').forEach((b) => b.toggleAttribute('aria-current', b.dataset.view === v));
+    document.querySelectorAll('.tab[aria-current]').forEach((b) => b.setAttribute('aria-current', 'page'));
+    $('v-novo').hidden = v !== 'novo';
+    $('v-acompanhar').hidden = v !== 'acompanhar';
+    if (v === 'acompanhar') renderRecentes();
+    try { history.replaceState(null, '', v === 'acompanhar' ? '#acompanhar' : location.pathname + location.search); } catch (e) { /* ok */ }
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => irPara(b.dataset.view)));
 
-  if (!jogador) return;
+  // ---------- formulário ----------
+  $('tipos').innerHTML = Object.entries(TIPOS).map(([k, t], i) =>
+    `<label class="tipo"><input type="radio" name="tipo" value="${k}" ${i === 0 ? 'checked' : ''}><span><b>${esc(t.rot)}</b><i>${esc(t.dica)}</i></span></label>`).join('');
+  $('sla-list').innerHTML = '<h3>Prazo de primeira resposta</h3>' + Object.values(TIPOS).map((t) =>
+    `<div><span>${esc(t.rot)}</span><b class="mono">${t.sla} h</b></div>`).join('');
+  const tipoAtual = () => (document.querySelector('input[name="tipo"]:checked') || {}).value || 'reclamacao';
+  function motivos() {
+    $('f-motivo').innerHTML = '<option value="">Selecione</option>' + TIPOS[tipoAtual()].motivos.map((m) => `<option>${esc(m)}</option>`).join('');
+  }
+  $('tipos').addEventListener('change', motivos);
+  motivos();
 
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("app").style.display = "block";
+  const salvo = store.get('sac.loja');
+  if (salvo) {
+    $('f-loja').value = salvo.nome || ''; $('f-cnpj').value = salvo.cnpj || ''; $('f-cidade').value = salvo.cidade || '';
+    $('f-contato').value = salvo.contato || ''; $('f-whats').value = salvo.whatsapp || '';
+  }
 
-  carregar();
-}
+  $('f-fotos').addEventListener('change', () => {
+    const todos = Array.from($('f-fotos').files || []);
+    $('thumbs').innerHTML = '';
+    todos.slice(0, MAX_FOTOS).forEach((f) => { const img = document.createElement('img'); img.alt = f.name; img.src = URL.createObjectURL(f); $('thumbs').appendChild(img); });
+    if (todos.length > MAX_FOTOS) toast('Só as primeiras ' + MAX_FOTOS + ' fotos serão enviadas.');
+  });
 
-function salvar() {
-  let dados = {
-    nome: val("nome"),
-    classe: val("classe"),
-    idade: val("idade"),
-    aparencia: val("aparencia"),
-    forca: val("forca"),
-    agi: val("agi"),
-    mente: val("mente"),
-    pres: val("pres"),
-    arma: val("arma"),
-    dano: val("dano"),
-    habilidades: val("habilidades"),
-    ancora: val("ancora"),
-    item1: val("item1"),
-    item2: val("item2"),
-    item3: val("item3"),
-    memorias: val("memorias"),
-    vida: vida,
-    memoria: memoria
-  };
+  $('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!sb) return;
+    const v = (id) => $(id).value.trim();
+    const faltando = [['f-loja', 'nome da loja'], ['f-contato', 'seu nome'], ['f-whats', 'WhatsApp'], ['f-motivo', 'motivo'], ['f-desc', 'descrição']].filter(([id]) => !v(id));
+    if (faltando.length) { $('form-msg').textContent = 'Preencha: ' + faltando.map((f) => f[1]).join(', ') + '.'; $(faltando[0][0]).focus(); return; }
+    if (soDigitos(v('f-whats')).length < 10) { $('form-msg').textContent = 'Confira o WhatsApp: use DDD + número.'; $('f-whats').focus(); return; }
 
-  localStorage.setItem(jogador, JSON.stringify(dados));
-  atualizar();
-}
+    const btn = $('btn-enviar');
+    btn.disabled = true;
+    try {
+      const fotos = [];
+      const arquivos = Array.from($('f-fotos').files || []).slice(0, MAX_FOTOS);
+      for (let i = 0; i < arquivos.length; i++) {
+        const f = arquivos[i];
+        const ext = MIME_EXT[f.type];
+        if (!ext) { toast('A foto ' + f.name + ' foi ignorada: use JPG, PNG, WEBP ou HEIC.'); continue; }
+        if (f.size > 8 * 1024 * 1024) { toast('A foto ' + f.name + ' passa de 8 MB e foi ignorada.'); continue; }
+        $('form-msg').textContent = `Enviando foto ${i + 1} de ${arquivos.length}…`;
+        const caminho = 'pendente/' + crypto.randomUUID() + '.' + ext;
+        const { error } = await sb.storage.from('fotos').upload(caminho, f, { contentType: f.type, upsert: false });
+        if (error) toast('A foto ' + f.name + ' não foi enviada: ' + mensagemErro(error));
+        else fotos.push(caminho);
+      }
+      $('form-msg').textContent = 'Registrando chamado…';
+      const tipo = tipoAtual();
+      const loja = { nome: v('f-loja'), cnpj: v('f-cnpj'), cidade: v('f-cidade'), contato: v('f-contato'), whatsapp: v('f-whats') };
+      const { data, error } = await sb.rpc('abrir_chamado', { dados: {
+        tipo, motivo: v('f-motivo'), loja_nome: loja.nome, loja_cnpj: loja.cnpj, loja_cidade: loja.cidade,
+        loja_contato: loja.contato, loja_whatsapp: loja.whatsapp, nf: v('f-nf'), produto: v('f-produto'),
+        quantidade: v('f-qtd'), descricao: v('f-desc'), fotos
+      } });
+      if (error) throw error;
+      const protocolo = data.protocolo;
+      store.set('sac.loja', loja);
+      const rec = (store.get('sac.recentes') || []).filter((r) => r.protocolo !== protocolo);
+      rec.unshift({ protocolo, whatsapp: loja.whatsapp, tipo, em: new Date().toISOString() });
+      store.set('sac.recentes', rec.slice(0, 30));
+      ['f-nf', 'f-produto', 'f-qtd', 'f-desc'].forEach((id) => { $(id).value = ''; });
+      $('f-fotos').value = ''; $('thumbs').innerHTML = ''; $('f-motivo').value = ''; $('form-msg').textContent = '';
+      $('suc-code').textContent = protocolo;
+      $('suc-prazo').textContent = 'Primeira resposta em até ' + TIPOS[tipo].sla + ' horas.';
+      $('form-area').hidden = true; $('sucesso').hidden = false;
+      window.scrollTo(0, 0);
+    } catch (err) {
+      $('form-msg').textContent = mensagemErro(err);
+    } finally {
+      btn.disabled = !sb;
+    }
+  });
+  $('suc-copiar').addEventListener('click', () => copiar($('suc-code').textContent));
+  $('suc-novo').addEventListener('click', () => { $('sucesso').hidden = true; $('form-area').hidden = false; window.scrollTo(0, 0); });
+  $('suc-ver').addEventListener('click', () => {
+    $('c-proto').value = $('suc-code').textContent; $('c-whats').value = (store.get('sac.loja') || {}).whatsapp || '';
+    irPara('acompanhar'); consultar();
+  });
 
-function carregar() {
-  let dados = JSON.parse(localStorage.getItem(jogador));
+  // ---------- consulta ----------
+  function renderRecentes() {
+    const rec = store.get('sac.recentes') || [];
+    $('recentes').innerHTML = rec.length
+      ? '<ul class="people">' + rec.map((r, i) => `<li><span class="mono">${esc(r.protocolo)}</span><button class="btn small" type="button" data-rec="${i}">Ver</button></li>`).join('') + '</ul>'
+      : '<p class="muted" style="margin:0">Os chamados que você abrir neste celular ou computador aparecem aqui para consulta rápida.</p>';
+  }
+  $('recentes').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-rec]');
+    if (!b) return;
+    const r = (store.get('sac.recentes') || [])[Number(b.dataset.rec)];
+    if (!r) return;
+    $('c-proto').value = r.protocolo; $('c-whats').value = r.whatsapp; consultar();
+  });
+  $('consulta').addEventListener('submit', (e) => { e.preventDefault(); consultar(); });
 
-  if (!dados) return;
+  async function consultar() {
+    if (!sb) return;
+    const protocolo = $('c-proto').value.trim().toUpperCase();
+    const whatsapp = $('c-whats').value.trim();
+    if (!protocolo || soDigitos(whatsapp).length < 10) { $('c-msg').textContent = 'Informe o protocolo e o WhatsApp com DDD.'; return; }
+    $('c-msg').textContent = 'Consultando…';
+    const { data, error } = await sb.rpc('consultar_chamado', { p_protocolo: protocolo, p_whatsapp: whatsapp });
+    if (error) { $('c-msg').textContent = mensagemErro(error); return; }
+    if (!data) { $('c-msg').textContent = 'Não encontramos esse protocolo com esse WhatsApp. Confira os dois.'; $('resultado').innerHTML = ''; atual = null; return; }
+    $('c-msg').textContent = '';
+    atual = { protocolo, whatsapp };
+    renderChamado(data);
+  }
 
-  set("nome", dados.nome);
-  set("classe", dados.classe);
-  set("idade", dados.idade);
-  set("aparencia", dados.aparencia);
-  set("forca", dados.forca);
-  set("agi", dados.agi);
-  set("mente", dados.mente);
-  set("pres", dados.pres);
-  set("arma", dados.arma);
-  set("dano", dados.dano);
-  set("habilidades", dados.habilidades);
-  set("ancora", dados.ancora);
-  set("item1", dados.item1);
-  set("item2", dados.item2);
-  set("item3", dados.item3);
-  set("memorias", dados.memorias);
+  function renderChamado(t) {
+    const p = prazoInfo(t);
+    const rot = { loja: 'Você', equipe: 'SAC', sistema: 'Atualização' };
+    $('resultado').innerHTML = `<div class="card" style="display:grid;gap:16px">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">
+        <span class="code mono" style="font-weight:600;font-size:18px">${esc(t.protocolo)}</span>
+        <span class="pill s-${esc(t.status)}">${esc(STATUS[t.status] || t.status)}</span>
+      </div>
+      <dl class="kv">
+        <dt>Tipo</dt><dd>${esc(TIPOS[t.tipo]?.rot || t.tipo)} · ${esc(t.motivo)}</dd>
+        <dt>Loja</dt><dd>${esc(t.loja_nome)}</dd>
+        ${t.nf ? `<dt>Nota / pedido</dt><dd class="mono">${esc(t.nf)}</dd>` : ''}
+        <dt>Aberto em</dt><dd>${esc(quando(t.criado_em))}</dd>
+        <dt>Prazo de resposta</dt><dd>${esc(quando(prazoDe(t).toISOString()))} <span class="prazo ${p.cls}">(${esc(p.txt)})</span></dd>
+      </dl>
+      <div class="desc">${esc(t.descricao)}</div>
+      <div class="box"><h3>Conversa</h3>
+        <ul class="timeline">${(t.mensagens || []).slice().reverse().map((m) => `<li><span class="dot ${m.autor === 'equipe' ? 'resposta' : m.autor}"></span><div>
+          <div class="meta">${esc(rot[m.autor] || m.autor)} · ${esc(quando(m.criado_em))}</div><div class="txt">${esc(m.texto)}</div></div></li>`).join('')}</ul>
+      </div>
+      ${['resolvido', 'recusado'].includes(t.status) ? '<p class="muted" style="margin:0">Este chamado foi encerrado. Se o problema continuar, abra um novo chamado citando este protocolo.</p>' : `
+      <div style="display:grid;gap:8px">
+        <label class="f" for="r-msg">Enviar mais informações para o SAC</label>
+        <textarea id="r-msg" maxlength="4000" placeholder="Ex.: Segue o número da nota: 4521."></textarea>
+        <div class="actions" style="margin-top:0"><button class="btn primary" type="button" id="r-enviar">Enviar mensagem</button></div>
+      </div>`}
+    </div>`;
+    const b = $('r-enviar');
+    if (b) b.addEventListener('click', enviarMensagem);
+  }
 
-  vida = dados.vida || 20;
-  memoria = dados.memoria || 10;
+  async function enviarMensagem() {
+    const texto = ($('r-msg').value || '').trim();
+    if (!texto || !atual) { toast('Escreva a mensagem antes de enviar.'); return; }
+    $('r-enviar').disabled = true;
+    const { data, error } = await sb.rpc('mensagem_loja', { p_protocolo: atual.protocolo, p_whatsapp: atual.whatsapp, p_texto: texto });
+    if (error || !data) { toast(error ? mensagemErro(error) : 'Chamado não encontrado.'); $('r-enviar').disabled = false; return; }
+    toast('Mensagem enviada ao SAC.');
+    consultar();
+  }
 
-  atualizar();
-}
-
-function atualizar() {
-  document.getElementById("vida").innerText = vida;
-  document.getElementById("memoria").innerText = memoria;
-
-  let agi = document.getElementById("agi").value;
-  let defesa = 10 + Number(agi || 0);
-
-  document.getElementById("defesa").innerText = defesa;
-}
-
-function val(id) {
-  return document.getElementById(id).value;
-}
-
-function set(id, v) {
-  document.getElementById(id).value = v || "";
-}
-
-document.querySelectorAll("input, textarea").forEach(el => {
-  el.addEventListener("input", salvar);
-});
-
+  if (location.hash === '#acompanhar') irPara('acompanhar');
+})();
 </script>
-
 </body>
 </html>

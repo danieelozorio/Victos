@@ -5,6 +5,6 @@
 window.SAC_CONFIG = {
   supabaseUrl: '',      // ex.: 'https://abcdefghijkl.supabase.co'
   supabaseAnonKey: '',  // ex.: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-  empresa: '',          // nome que aparece no topo, ex.: 'Distribuidora Viamor'
+  empresa: 'Victos',    // nome que aparece no topo e nas mensagens de WhatsApp
   whatsappSac: ''       // opcional: WhatsApp do SAC mostrado às lojas, ex.: '(11) 4000-1234'
 };

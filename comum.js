@@ -7,7 +7,7 @@
       motivos: ['Produto com defeito', 'Produto errado', 'Quantidade divergente', 'Validade próxima', 'Produto parado (encalhe)', 'Outro motivo de devolução'] },
     avaria: { rot: 'Avaria no transporte', dica: 'Chegou danificado', sla: 24,
       motivos: ['Embalagem danificada', 'Produto quebrado', 'Produto molhado', 'Volume faltando', 'Outra avaria'] },
-    duvida: { rot: 'Dúvida / pedido', dica: 'Boleto, nota, prazo', sla: 24,
+    duvida: { rot: 'Outros assuntos', dica: 'Boleto, nota, prazo', sla: 24,
       motivos: ['2ª via de boleto', '2ª via de nota fiscal', 'Status do pedido', 'Prazo de entrega', 'Outra dúvida'] }
   };
   const STATUS = {
@@ -17,8 +17,20 @@
   const ABERTOS = ['novo', 'analise', 'aguardando', 'aprovado'];
   const PRIORIDADES = { normal: 'Normal', alta: 'Alta', urgente: 'Urgente' };
   // Motivo de cada produto do chamado (um SKU pode estar em falta e outro com falta de peso).
-  const MOTIVOS_ITEM = ['Falta (quantidade menor)', 'Falta de peso', 'Qualidade', 'Avaria / quebrado', 'Embalagem danificada',
-    'Validade vencida ou próxima', 'Produto errado', 'Produto com defeito', 'Sobra (veio a mais)', 'Outro'];
+  // Cada motivo diz de que tipo é o chamado (prazo, prioridade e filtros do painel saem daí).
+  const MOTIVO_TIPO = {
+    'Falta (quantidade menor)': 'reclamacao', 'Falta de peso': 'reclamacao', 'Qualidade': 'reclamacao',
+    'Avaria / quebrado': 'avaria', 'Embalagem danificada': 'avaria',
+    'Validade vencida ou próxima': 'devolucao', 'Produto errado': 'devolucao', 'Produto com defeito': 'devolucao',
+    'Sobra (veio a mais)': 'devolucao', 'Outro': 'reclamacao'
+  };
+  const MOTIVOS_ITEM = Object.keys(MOTIVO_TIPO);
+  // Tipo do chamado pelos produtos: avaria pesa mais que devolução, que pesa mais que reclamação.
+  // Sem produto, é um assunto geral (ex.: 2ª via de boleto).
+  function tipoPelosItens(itens) {
+    const tipos = itens.map((i) => MOTIVO_TIPO[i.motivo]).filter(Boolean);
+    return ['avaria', 'devolucao', 'reclamacao'].find((t) => tipos.includes(t)) || 'duvida';
+  }
   const DECISOES = { pendente: 'Em análise', aceito: 'Aceito', recusado: 'Recusado' };
   // Fotos e vídeos aceitos: tipo do arquivo -> extensão usada no armazenamento.
   const MIME_EXT = {
@@ -129,5 +141,5 @@
     return '<div class="banner"><div><b>Site ainda não conectado ao banco de dados.</b> Preencha o arquivo <span class="mono">config.js</span> com a URL e a chave do Supabase (veja o passo a passo no README).</div></div>';
   }
 
-  window.SAC = { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, MOTIVOS_ITEM, fmtNum, fmtQtd, lerQtd, MIME_EXT, MAX_ARQUIVO, ehVideo, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, dur, quando, waNumero, foneBonito, toast, copiar, cliente, mensagemErro, configPendente };
+  window.SAC = { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, MOTIVOS_ITEM, tipoPelosItens, fmtNum, fmtQtd, lerQtd, MIME_EXT, MAX_ARQUIVO, ehVideo, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, dur, quando, waNumero, foneBonito, toast, copiar, cliente, mensagemErro, configPendente };
 })();

@@ -42,11 +42,6 @@
         <p class="lead">Registre aqui reclamações, devoluções, avarias e dúvidas. Você recebe um número de protocolo e acompanha a resposta na aba <b>Acompanhar chamado</b>.</p>
 
         <fieldset>
-          <legend>Atendimento</legend>
-          <label class="f"><span>Qual o problema? <span class="req">*</span></span><select id="f-motivo" required></select></label>
-        </fieldset>
-
-        <fieldset>
           <legend>Dados da loja</legend>
           <div class="loja-fixa" id="loja-fixa" hidden></div>
           <div class="fields">
@@ -62,13 +57,18 @@
           <legend>Detalhes</legend>
           <div class="fields">
             <label class="f">Nº da nota fiscal ou pedido<input type="text" id="f-nf" maxlength="60"></label>
-            <label class="f full"><span>Descreva o que aconteceu <span class="req">*</span></span><textarea id="f-desc" maxlength="4000" required placeholder="Ex.: Recebemos 3 caixas do pedido 4521; uma veio com a embalagem rasgada e 6 unidades quebradas."></textarea></label>
+            <div class="f full">
+              <div class="desc-cab"><label for="f-desc"><span>Descreva o que aconteceu <span class="req">*</span></span></label>
+                <button class="btn small mic" type="button" id="btn-mic" hidden aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2z"/></svg><span id="mic-rot">Falar</span></button></div>
+              <textarea id="f-desc" maxlength="4000" required placeholder="Escreva ou toque em Falar e conte o que aconteceu. Ex.: Recebemos 3 caixas do pedido 4521; uma veio com a embalagem rasgada e 6 unidades quebradas."></textarea>
+              <small class="muted" id="mic-status" role="status"></small>
+            </div>
           </div>
         </fieldset>
 
         <fieldset>
           <legend id="itens-leg">Produtos</legend>
-          <p class="hint" id="itens-hint">Adicione uma linha para cada produto. A análise é feita produto por produto.</p>
+          <p class="hint" id="itens-hint">Uma linha para cada produto, com o motivo dele (falta, falta de peso, qualidade, avaria...). A análise é feita produto por produto. Se o assunto não envolve produto, como 2ª via de boleto, deixe em branco e explique na descrição.</p>
           <div class="itens" id="itens"></div>
           <button class="btn" type="button" id="add-item">+ Adicionar outro produto</button>
         </fieldset>
@@ -166,7 +166,7 @@
 <script src="comum.js"></script>
 <script>
 (function () {
-  const { TIPOS, STATUS, MOTIVOS_ITEM, fmtQtd, lerQtd, MAX_ARQUIVO, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, quando, toast, copiar, mensagemErro } = window.SAC;
+  const { TIPOS, STATUS, MOTIVOS_ITEM, tipoPelosItens, fmtQtd, lerQtd, MAX_ARQUIVO, tipoArquivo, tamanho, decisaoTexto, $, esc, soDigitos, store, prazoDe, prazoInfo, quando, toast, copiar, mensagemErro } = window.SAC;
   const cfg = window.SAC_CONFIG || {};
   const sb = window.SAC.cliente();
   let atual = null; // chamado aberto na consulta: {protocolo, whatsapp}
@@ -190,26 +190,11 @@
   // ---------- formulário ----------
   $('sla-list').innerHTML = '<h3>Prazo de primeira resposta</h3>' + Object.values(TIPOS).map((t) =>
     `<div><span>${esc(t.rot)}</span><b class="mono">${t.sla} h</b></div>`).join('');
-  // Um campo só: os motivos vêm agrupados por tipo, e o tipo do chamado sai do motivo escolhido
-  // (valor "tipo|motivo"). Assim prazo, prioridade e filtros do painel continuam valendo.
-  const ORDEM_TIPOS = ['avaria', 'devolucao', 'reclamacao', 'duvida'];
-  $('f-motivo').innerHTML = '<option value="">Selecione o motivo</option>' + ORDEM_TIPOS.map((k) =>
-    `<optgroup label="${esc(TIPOS[k].rot)}">${TIPOS[k].motivos.map((m) => `<option value="${k}|${esc(m)}">${esc(m)}</option>`).join('')}</optgroup>`).join('');
-  const tipoAtual = () => ($('f-motivo').value.split('|')[0]) || '';
-  const motivoAtual = () => $('f-motivo').value.split('|').slice(1).join('|');
-  // Produtos: exigidos em devolução e avaria; opcionais nos outros tipos.
-  const exigeProduto = () => ['devolucao', 'avaria'].includes(tipoAtual());
-  function ajustarTipo() {
-    $('itens-leg').textContent = !tipoAtual() ? 'Produtos' : exigeProduto() ? 'Produtos *' : 'Produtos (opcional)';
-  }
-  $('f-motivo').addEventListener('change', ajustarTipo);
-  ajustarTipo();
-
   function novaLinha() {
     const d = document.createElement('div');
     d.className = 'item-linha';
     d.innerHTML = `<span class="item-n" aria-hidden="true"></span>
-      <label class="f c-sku">Código (SKU)<input type="text" data-k="sku" maxlength="60" autocomplete="off" inputmode="numeric" placeholder="Digite o código"></label>
+      <label class="f c-sku">Código (SKU)<input type="text" data-k="sku" maxlength="60" autocomplete="off" inputmode="numeric" placeholder="Código"></label>
       <label class="f c-desc">Descrição do produto<input type="text" data-k="produto" maxlength="200" autocomplete="off" placeholder="ou comece pelo nome"></label>
       <div class="f c-qtd"><span>Quantidade</span><div class="qtd-un">
         <input type="text" data-k="quantidade" inputmode="decimal" autocomplete="off" aria-label="Quantidade">
@@ -391,20 +376,55 @@
     renderAnexos();
   });
 
+  // Ditado por voz na descrição: usa o reconhecimento de voz do próprio navegador (Chrome, Edge, Safari).
+  const Reconhecedor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let ditado = null;
+  function micVisual(ouvindo, status) {
+    $('btn-mic').setAttribute('aria-pressed', String(ouvindo));
+    $('btn-mic').classList.toggle('ouvindo', ouvindo);
+    $('mic-rot').textContent = ouvindo ? 'Parar' : 'Falar';
+    $('mic-status').textContent = status || '';
+  }
+  if (Reconhecedor) {
+    $('btn-mic').hidden = false;
+    $('btn-mic').addEventListener('click', () => {
+      if (ditado) { ditado.stop(); return; }
+      const campo = $('f-desc');
+      const base = campo.value.trim() ? campo.value.trim() + ' ' : '';
+      let finais = '';
+      const rec = new Reconhecedor();
+      rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true;
+      rec.onresult = (e) => {
+        let parcial = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) finais += t.trim() + ' '; else parcial += t;
+        }
+        let texto = base + finais + parcial;
+        if (!base) texto = texto.charAt(0).toUpperCase() + texto.slice(1);
+        campo.value = texto.slice(0, 4000);
+      };
+      rec.onerror = (e) => {
+        const msg = e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'O microfone foi bloqueado. Libere o acesso ao microfone para este site nas configurações do navegador.'
+          : e.error === 'no-speech' ? 'Não ouvi nada. Toque em Falar e fale perto do celular.'
+          : e.error === 'network' ? 'O ditado precisa de internet. Confira a conexão.' : 'Não deu para usar o microfone agora. Você pode digitar normalmente.';
+        toast(msg);
+      };
+      rec.onend = () => { ditado = null; $('f-desc').value = $('f-desc').value.trim(); micVisual(false, ''); };
+      try { rec.start(); ditado = rec; micVisual(true, 'Ouvindo… fale o que aconteceu e toque em Parar quando terminar. Depois você pode corrigir o texto.'); }
+      catch (err) { ditado = null; toast('Não deu para usar o microfone agora. Você pode digitar normalmente.'); }
+    });
+  }
+
   $('form').addEventListener('input', () => { if (!$('btn-enviar').disabled) $('form-msg').textContent = ''; });
   $('form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!sb) return;
     const v = (id) => $(id).value.trim();
-    const faltando = [['f-motivo', 'qual o problema'], ['f-loja', 'nome da loja'], ['f-contato', 'seu nome'], ['f-whats', 'WhatsApp'], ['f-desc', 'descrição']].filter(([id]) => !v(id));
+    const faltando = [['f-loja', 'nome da loja'], ['f-contato', 'seu nome'], ['f-whats', 'WhatsApp'], ['f-desc', 'descrição']].filter(([id]) => !v(id));
     if (faltando.length) { $('form-msg').textContent = 'Preencha: ' + faltando.map((f) => f[1]).join(', ') + '.'; $(faltando[0][0]).focus(); return; }
     if (soDigitos(v('f-whats')).length < 10) { $('form-msg').textContent = 'Confira o WhatsApp: use DDD + número.'; $('f-whats').focus(); return; }
     const itens = lerItens();
-    if (exigeProduto() && !itens.length) {
-      $('form-msg').textContent = 'Informe pelo menos um produto (código ou descrição).';
-      $('itens').querySelector('input').focus();
-      return;
-    }
     // Quantidade: número com até 3 casas em kg; número inteiro em unidades.
     const qtdRuim = Array.from($('itens').querySelectorAll('.item-linha')).find((l) => {
       const q = lerQtd(l.querySelector('[data-k="quantidade"]').value);
@@ -416,12 +436,10 @@
       qtdRuim.querySelector('[data-k="quantidade"]').focus();
       return;
     }
-    // Em devolução e avaria, cada produto precisa do seu motivo (a análise é feita por produto).
-    if (exigeProduto()) {
-      const semMotivo = Array.from($('itens').querySelectorAll('.item-linha')).find((l) =>
-        (l.querySelector('[data-k="sku"]').value.trim() || l.querySelector('[data-k="produto"]').value.trim()) && !l.querySelector('[data-k="motivo"]').value);
-      if (semMotivo) { $('form-msg').textContent = 'Escolha o motivo do produto ' + semMotivo.querySelector('.item-n').textContent + '.'; semMotivo.querySelector('[data-k="motivo"]').focus(); return; }
-    }
+    // Cada produto informado precisa do seu motivo: é dele que sai o tipo do chamado.
+    const semMotivo = Array.from($('itens').querySelectorAll('.item-linha')).find((l) =>
+      (l.querySelector('[data-k="sku"]').value.trim() || l.querySelector('[data-k="produto"]').value.trim()) && !l.querySelector('[data-k="motivo"]').value);
+    if (semMotivo) { $('form-msg').textContent = 'Escolha o motivo do produto ' + semMotivo.querySelector('.item-n').textContent + '.'; semMotivo.querySelector('[data-k="motivo"]').focus(); return; }
 
     const btn = $('btn-enviar');
     btn.disabled = true;
@@ -436,10 +454,12 @@
         else anexos.push(caminho);
       }
       $('form-msg').textContent = 'Registrando chamado…';
-      const tipo = tipoAtual();
+      const tipo = tipoPelosItens(itens);
+      // Resumo para a fila: os motivos dos produtos, sem repetir (ou "Outros assuntos" sem produto).
+      const motivo = (Array.from(new Set(itens.map((i) => i.motivo).filter(Boolean))).join(', ') || 'Outros assuntos').slice(0, 120);
       const loja = { nome: v('f-loja'), cnpj: v('f-cnpj'), cidade: v('f-cidade'), contato: v('f-contato'), whatsapp: v('f-whats') };
       const { data, error } = await sb.rpc('abrir_chamado', { dados: {
-        tipo, motivo: motivoAtual(), loja_nome: loja.nome, loja_cnpj: loja.cnpj, loja_cidade: loja.cidade,
+        tipo, motivo, loja_nome: loja.nome, loja_cnpj: loja.cnpj, loja_cidade: loja.cidade,
         loja_contato: loja.contato, loja_whatsapp: loja.whatsapp, nf: v('f-nf'), descricao: v('f-desc'), itens, anexos,
         loja_codigo: lojaFixa ? lojaFixa.codigo : null
       } });
@@ -450,7 +470,7 @@
       rec.unshift({ protocolo, whatsapp: loja.whatsapp, tipo, em: new Date().toISOString() });
       store.set('sac.recentes', rec.slice(0, 30));
       ['f-nf', 'f-desc'].forEach((id) => { $(id).value = ''; });
-      limparItens(); limparAnexos(); $('f-motivo').value = ''; ajustarTipo(); $('form-msg').textContent = '';
+      limparItens(); limparAnexos(); $('form-msg').textContent = '';
       $('suc-code').textContent = protocolo;
       $('suc-prazo').textContent = 'Primeira resposta em até ' + TIPOS[tipo].sla + ' horas.';
       $('form-area').hidden = true; $('sucesso').hidden = false;

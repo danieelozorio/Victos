@@ -26,6 +26,7 @@
     </a>
     <nav class="tabs" id="tabs" aria-label="Seções" hidden>
       <button class="tab" type="button" data-view="fila" aria-current="page">Fila <span class="n" id="n-atrasados" hidden></span></button>
+      <button class="tab" type="button" data-view="relatorios">Relatórios</button>
       <button class="tab" type="button" data-view="link">Lojas</button>
       <button class="tab" type="button" data-view="produtos">Produtos</button>
       <button class="tab" type="button" id="sair">Sair</button>
@@ -70,6 +71,29 @@
     </div>
     <div class="chip-filtro" id="filtro-loja" hidden>Mostrando só os chamados de <b id="filtro-loja-nome"></b><button class="btn small" type="button" id="filtro-loja-limpar">Ver todas as lojas</button></div>
     <div class="list" id="lista"></div>
+  </section>
+
+  <!-- Relatórios -->
+  <section id="v-relatorios" hidden>
+    <div class="head-row">
+      <div><h1>Relatórios</h1><p class="lead">Acompanhe quais lojas mais abrem chamados, quais produtos mais dão problema e por quê. Toque numa barra para filtrar por aquela loja ou produto.</p></div>
+      <button class="btn" type="button" id="rl-csv">Exportar planilha (CSV)</button>
+    </div>
+    <div class="card rl-filtros">
+      <div class="rl-periodo" role="group" aria-label="Período">
+        <button type="button" data-per="7">7 dias</button><button type="button" data-per="30" aria-pressed="true">30 dias</button><button type="button" data-per="90">90 dias</button><button type="button" data-per="mes">Este mês</button><button type="button" data-per="mesant">Mês passado</button>
+      </div>
+      <div class="rl-campos">
+        <label class="f">De<input type="date" id="rl-de"></label>
+        <label class="f">Até<input type="date" id="rl-ate"></label>
+        <label class="f">Loja<select id="rl-loja"></select></label>
+        <label class="f">Tipo<select id="rl-tipo"></select></label>
+        <label class="f">Motivo do produto<select id="rl-motivo"></select></label>
+        <label class="f">Produto<input type="search" id="rl-prod" placeholder="Código ou nome"></label>
+      </div>
+      <div class="rl-ativos" id="rl-ativos"></div>
+    </div>
+    <div id="rl-corpo"></div>
   </section>
 
   <!-- Produtos -->
@@ -230,7 +254,7 @@
 <script src="comum.js"></script>
 <script>
 (function () {
-  const { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, ehVideo, decisaoTexto, fmtNum, fmtQtd, lerQtd, $, esc, soDigitos, prazoDe, prazoInfo, quando, waNumero, foneBonito, toast, copiar, mensagemErro } = window.SAC;
+  const { TIPOS, STATUS, ABERTOS, PRIORIDADES, DECISOES, MOTIVOS_ITEM, ehVideo, decisaoTexto, fmtNum, fmtQtd, lerQtd, $, esc, soDigitos, prazoDe, prazoInfo, quando, waNumero, foneBonito, toast, copiar, mensagemErro } = window.SAC;
   const cfg = window.SAC_CONFIG || {};
   const sb = window.SAC.cliente();
   const S = { uid: null, email: '', tickets: [], equipe: {}, view: 'fila', aberto: null, msgs: [], midias: [], renderPendente: false, filtro: { q: '', status: 'abertos', tipo: '' }, ocupado: false, canal: null, ultimaResposta: '' };
@@ -239,8 +263,9 @@
     if (!sb) { $('banners').innerHTML = window.SAC.configPendente(); return; }
 
   function mostrar(sec) {
-    ['login', 'negado', 'fila', 'link', 'produtos'].forEach((v) => { $('v-' + v).hidden = v !== sec; });
-    $('tabs').hidden = !['fila', 'link', 'produtos'].includes(sec);
+    ['login', 'negado', 'fila', 'relatorios', 'link', 'produtos'].forEach((v) => { $('v-' + v).hidden = v !== sec; });
+    $('tabs').hidden = !['fila', 'relatorios', 'link', 'produtos'].includes(sec);
+    if (sec === 'relatorios') abrirRelatorios();
     document.querySelectorAll('.tab[data-view]').forEach((b) => {
       if (b.dataset.view === sec) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
@@ -736,6 +761,244 @@
       toast(l.ativa ? 'Loja desativada: o link dela deixou de funcionar.' : 'Loja reativada: o link voltou a funcionar.');
       carregarLojas();
     }
+  });
+
+  // ---------- relatórios ----------
+  // Os dados do período vêm do banco a cada mudança de datas; os demais filtros rodam aqui no navegador.
+  const R = { dados: [], carregado: null, carregando: false, limite: 20 };
+  const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const dataLocal = (txt) => { const [a, m, d] = txt.split('-').map(Number); return new Date(a, m - 1, d); };
+  function definirPeriodo(per) {
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    let de = new Date(hoje), ate = new Date(hoje);
+    if (per === 'mes') de = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    else if (per === 'mesant') { de = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1); ate = new Date(hoje.getFullYear(), hoje.getMonth(), 0); }
+    else de.setDate(de.getDate() - (Number(per) - 1));
+    $('rl-de').value = iso(de); $('rl-ate').value = iso(ate);
+    document.querySelectorAll('[data-per]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.per === per)));
+    carregarRelatorio();
+  }
+  function abrirRelatorios() {
+    if (!$('rl-tipo').options.length) {
+      $('rl-tipo').innerHTML = '<option value="">Todos</option>' + Object.entries(TIPOS).map(([k, t]) => `<option value="${k}">${esc(t.rot)}</option>`).join('');
+      $('rl-motivo').innerHTML = '<option value="">Todos</option>' + MOTIVOS_ITEM.map((m) => `<option>${esc(m)}</option>`).join('');
+    }
+    const atual = $('rl-loja').value;
+    $('rl-loja').innerHTML = '<option value="">Todas</option>' + (S.lojas || []).map((l) => `<option value="${esc(l.id)}">${esc(l.nome)}</option>`).join('');
+    $('rl-loja').value = atual;
+    if (!R.carregado) definirPeriodo('30'); else renderRelatorio();
+  }
+  async function carregarRelatorio() {
+    const de = $('rl-de').value, ate = $('rl-ate').value;
+    if (!de || !ate) return;
+    if (de > ate) { $('rl-corpo').innerHTML = '<div class="empty"><b>Período inválido</b><span>A data "De" precisa ser antes da data "Até".</span></div>'; return; }
+    const chave = de + '|' + ate;
+    R.carregando = chave;
+    $('rl-corpo').innerHTML = '<div class="empty"><b>Carregando relatório…</b></div>';
+    const fim = dataLocal(ate); fim.setDate(fim.getDate() + 1);
+    const todos = [];
+    for (let i = 0; ; i += 1000) {
+      const { data, error } = await sb.from('chamados').select('id, protocolo, tipo, motivo, status, loja_id, loja_nome, criado_em, itens:chamado_itens(*)')
+        .gte('criado_em', dataLocal(de).toISOString()).lt('criado_em', fim.toISOString()).order('criado_em').range(i, i + 999);
+      if (R.carregando !== chave) return; // o período mudou enquanto carregava
+      if (error) { $('rl-corpo').innerHTML = `<div class="empty"><b>Não foi possível carregar o relatório</b><span>${esc(mensagemErro(error))}</span></div>`; return; }
+      todos.push(...data);
+      if (data.length < 1000) break;
+    }
+    R.dados = todos; R.carregado = chave;
+    renderRelatorio();
+  }
+  ['rl-de', 'rl-ate'].forEach((id) => $(id).addEventListener('change', () => { document.querySelectorAll('[data-per]').forEach((b) => b.setAttribute('aria-pressed', 'false')); carregarRelatorio(); }));
+  ['rl-loja', 'rl-tipo', 'rl-motivo'].forEach((id) => $(id).addEventListener('change', renderRelatorio));
+  $('rl-prod').addEventListener('input', renderRelatorio);
+  document.querySelector('.rl-periodo').addEventListener('click', (e) => { const b = e.target.closest('[data-per]'); if (b) definirPeriodo(b.dataset.per); });
+
+  const chaveLoja = (t) => t.loja_id || 'nome:' + String(t.loja_nome || '').trim().toLowerCase();
+  const chaveProd = (i) => i.sku ? 'sku:' + i.sku : 'nome:' + String(i.produto || '').trim().toLowerCase();
+  function somarQtd(lista) {
+    const un = lista.filter((i) => i.unidade !== 'kg').reduce((a, i) => a + Number(i.quantidade || 0), 0);
+    const kg = lista.filter((i) => i.unidade === 'kg').reduce((a, i) => a + Number(i.quantidade || 0), 0);
+    return [un ? fmtQtd(un, 'un') : '', kg ? fmtQtd(kg, 'kg') : ''].filter(Boolean).join(' + ');
+  }
+  // Aplica loja, tipo, motivo e produto. Chamados contam quando têm algum produto que passa nos filtros de produto.
+  function filtrarRelatorio() {
+    const loja = $('rl-loja').value, tipo = $('rl-tipo').value, motivo = $('rl-motivo').value;
+    const q = semAcento($('rl-prod').value.trim());
+    const prodOk = (i) => (!motivo || i.motivo === motivo) && (!q || String(i.sku || '').toLowerCase().startsWith(q) || q.split(/\s+/).every((w) => semAcento(i.produto).includes(w)));
+    const porItem = !!(motivo || q);
+    const chamados = [], itens = [];
+    R.dados.forEach((t) => {
+      if (loja && t.loja_id !== loja) return;
+      if (tipo && t.tipo !== tipo) return;
+      const its = (t.itens || []).filter(prodOk);
+      if (porItem && !its.length) return;
+      chamados.push(t);
+      its.forEach((i) => itens.push({ ...i, chamado: t }));
+    });
+    return { chamados, itens };
+  }
+  // Barras horizontais de ranking: uma cor, valor escrito ao lado, detalhe no toque/passar o mouse.
+  function barras(linhas, opts) {
+    if (!linhas.length) return `<p class="muted rl-vazio">${opts.vazio}</p>`;
+    const max = Math.max(...linhas.map((l) => l.valor));
+    return `<ol class="rl-barras">${linhas.map((l) => `<li>
+      <button type="button" class="rl-barra" ${opts.acao ? `data-filtro="${opts.acao}" data-valor="${esc(l.filtro)}"` : 'disabled'} data-tip="${esc(l.tip)}">
+        <span class="rl-rot">${esc(l.rotulo)}</span>
+        <span class="rl-trilho"><span class="rl-mark" style="width:${Math.max(2, l.valor / max * 100)}%"></span></span>
+        <span class="rl-val">${esc(l.valorTxt ?? fmtNum(l.valor))}</span>
+      </button></li>`).join('')}</ol>`;
+  }
+  function renderRelatorio(manterLimite) {
+    if (!R.carregado) return;
+    if (manterLimite !== true) R.limite = 20;
+    const { chamados, itens } = filtrarRelatorio();
+    // Filtros ativos, para a pessoa saber o que está olhando e limpar com um toque.
+    const ativos = [];
+    if ($('rl-loja').value) ativos.push(['rl-loja', 'Loja: ' + $('rl-loja').selectedOptions[0].textContent]);
+    if ($('rl-tipo').value) ativos.push(['rl-tipo', 'Tipo: ' + $('rl-tipo').selectedOptions[0].textContent]);
+    if ($('rl-motivo').value) ativos.push(['rl-motivo', 'Motivo: ' + $('rl-motivo').value]);
+    if ($('rl-prod').value.trim()) ativos.push(['rl-prod', 'Produto: ' + $('rl-prod').value.trim()]);
+    $('rl-ativos').innerHTML = ativos.map(([id, t]) => `<button type="button" class="rl-chip" data-limpar="${id}" aria-label="Remover filtro ${esc(t)}">${esc(t)} <span aria-hidden="true">×</span></button>`).join('');
+
+    const de = dataLocal($('rl-de').value), ate = dataLocal($('rl-ate').value);
+    const periodoTxt = de.toLocaleDateString('pt-BR') + ' a ' + ate.toLocaleDateString('pt-BR');
+    if (!chamados.length) {
+      $('rl-corpo').innerHTML = `<div class="empty"><b>Nenhum chamado de ${esc(periodoTxt)} com esses filtros</b><span>Aumente o período ou remova algum filtro.</span></div>`;
+      return;
+    }
+    const aceitos = itens.filter((i) => i.decisao === 'aceito'), recusados = itens.filter((i) => i.decisao === 'recusado'), pend = itens.filter((i) => i.decisao === 'pendente');
+    const decididos = aceitos.length + recusados.length;
+    const lojasDistintas = new Set(chamados.map(chaveLoja)).size;
+
+    // Evolução no tempo: por dia até ~2 meses, por semana até 1 ano, por mês acima disso.
+    const dias = Math.round((ate - de) / 864e5) + 1;
+    const escala = dias > 366 ? 'mes' : dias > 62 ? 'semana' : 'dia';
+    const porSemana = escala === 'semana';
+    const baldes = [];
+    if (escala === 'mes') for (let d = new Date(de.getFullYear(), de.getMonth(), 1); d <= ate; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) baldes.push({ ini: d, n: 0 });
+    else for (let d = new Date(de); d <= ate; d.setDate(d.getDate() + (porSemana ? 7 : 1))) baldes.push({ ini: new Date(d), n: 0 });
+    chamados.forEach((t) => {
+      const c = new Date(t.criado_em);
+      const idx = escala === 'mes' ? (c.getFullYear() - baldes[0].ini.getFullYear()) * 12 + c.getMonth() - baldes[0].ini.getMonth()
+        : Math.floor((new Date(c.getFullYear(), c.getMonth(), c.getDate()) - de) / 864e5 / (porSemana ? 7 : 1));
+      if (idx >= 0 && idx < baldes.length) baldes[idx].n++;
+    });
+    const nomeEscala = { dia: 'por dia', semana: 'por semana', mes: 'por mês' }[escala];
+    // Topo do eixo par, para o valor do meio cair exatamente na linha do meio.
+    const maxB = Math.max(2, Math.ceil(Math.max(...baldes.map((b) => b.n)) / 2) * 2);
+    const fmtD = (d) => escala === 'mes' ? d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('. de ', '/').replace(' de ', '/') : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const passoRot = Math.ceil(baldes.length / 8);
+    const colunas = `<div class="rl-tempo" role="img" aria-label="Chamados ${nomeEscala}, de ${esc(periodoTxt)}">
+      <div class="rl-eixo"><span>${fmtNum(maxB)}</span><span>${fmtNum(maxB / 2)}</span><span>0</span></div>
+      <div class="rl-cols">${baldes.map((b, i) => `<div class="rl-col" tabindex="0" data-tip="${esc((escala === 'mes' ? b.ini.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : (porSemana ? 'Semana de ' : '') + b.ini.toLocaleDateString('pt-BR')) + ': ' + b.n + (b.n === 1 ? ' chamado' : ' chamados'))}">
+        <span class="rl-colbar" style="height:${b.n ? Math.max(2, b.n / maxB * 100) : 0}%"></span>${i % passoRot === 0 ? `<span class="rl-colrot">${fmtD(b.ini)}</span>` : ''}</div>`).join('')}</div>
+    </div>`;
+
+    // Rankings
+    const lojasMap = new Map();
+    chamados.forEach((t) => { const k = chaveLoja(t); const o = lojasMap.get(k) || { nome: t.loja_nome, id: t.loja_id, n: 0, itens: [] }; o.n++; lojasMap.set(k, o); });
+    itens.forEach((i) => { const o = lojasMap.get(chaveLoja(i.chamado)); if (o) o.itens.push(i); });
+    const topLojas = [...lojasMap.values()].sort((a, b) => b.n - a.n).slice(0, 10).map((o) => ({
+      rotulo: o.nome, valor: o.n, filtro: o.id || '',
+      tip: `${o.nome}: ${o.n} chamado${o.n === 1 ? '' : 's'}, ${o.itens.length} produto${o.itens.length === 1 ? '' : 's'}` + (somarQtd(o.itens) ? ` (${somarQtd(o.itens)})` : '') + `; aceitos ${o.itens.filter((i) => i.decisao === 'aceito').length}, recusados ${o.itens.filter((i) => i.decisao === 'recusado').length}`
+    }));
+    const prodMap = new Map();
+    itens.forEach((i) => { const k = chaveProd(i); const o = prodMap.get(k) || { sku: i.sku, nome: i.produto, lista: [], lojas: new Set() }; o.lista.push(i); o.lojas.add(chaveLoja(i.chamado)); if (!o.nome && i.produto) o.nome = i.produto; prodMap.set(k, o); });
+    const topProd = [...prodMap.values()].sort((a, b) => b.lista.length - a.lista.length).slice(0, 10).map((o) => {
+      const mot = {}; o.lista.forEach((i) => { if (i.motivo) mot[i.motivo] = (mot[i.motivo] || 0) + 1; });
+      const principal = Object.entries(mot).sort((a, b) => b[1] - a[1])[0];
+      return { rotulo: [o.sku, o.nome].filter(Boolean).join(' · ') || 'Sem identificação', valor: o.lista.length, filtro: o.sku || o.nome || '',
+        tip: `${o.lista.length} ocorrência${o.lista.length === 1 ? '' : 's'} em ${o.lojas.size} loja${o.lojas.size === 1 ? '' : 's'}` + (somarQtd(o.lista) ? `, ${somarQtd(o.lista)}` : '') + (principal ? `; motivo mais comum: ${principal[0]}` : '') };
+    });
+    const motMap = {}; itens.forEach((i) => { const m = i.motivo || 'Sem motivo informado'; (motMap[m] = motMap[m] || []).push(i); });
+    const motivos = Object.entries(motMap).sort((a, b) => b[1].length - a[1].length).map(([m, l]) => ({
+      rotulo: m, valor: l.length, filtro: m === 'Sem motivo informado' ? '' : m,
+      tip: `${m}: ${l.length} produto${l.length === 1 ? '' : 's'}` + (somarQtd(l) ? ` (${somarQtd(l)})` : '') + ` · ${Math.round(l.length / itens.length * 100)}% do total`
+    }));
+
+    const pct = (n) => decididos ? Math.round(n / decididos * 100) + '%' : '—';
+    const decisaoBarra = itens.length ? `<div class="rl-decisao" role="img" aria-label="Decisões: ${aceitos.length} aceitos, ${recusados.length} recusados, ${pend.length} a decidir">
+        ${[['aceito', aceitos.length, 'Aceitos'], ['recusado', recusados.length, 'Recusados'], ['pendente', pend.length, 'A decidir']].filter((x) => x[1]).map(([k, n, r]) =>
+          `<span class="rl-seg dec-${k}" style="flex:${n}" data-tip="${r}: ${n} (${Math.round(n / itens.length * 100)}%)" tabindex="0"></span>`).join('')}
+      </div>
+      <ul class="rl-legenda">
+        <li><span class="rl-pto dec-aceito"></span>Aceitos <b>${aceitos.length}</b></li>
+        <li><span class="rl-pto dec-recusado"></span>Recusados <b>${recusados.length}</b></li>
+        <li><span class="rl-pto dec-pendente"></span>A decidir <b>${pend.length}</b></li>
+      </ul>` : '<p class="muted rl-vazio">Nenhum produto nos chamados filtrados.</p>';
+
+    $('rl-corpo').innerHTML = `
+      <p class="muted" style="margin:0 0 10px">${esc(periodoTxt)}</p>
+      <div class="kpis rl-kpis">
+        <div class="kpi"><span>Chamados</span><b>${fmtNum(chamados.length)}</b></div>
+        <div class="kpi"><span>Produtos com problema</span><b>${fmtNum(itens.length)}</b></div>
+        <div class="kpi"><span>Lojas</span><b>${fmtNum(lojasDistintas)}</b></div>
+        <div class="kpi ${decididos ? 'ok' : ''}"><span>Aceitos (dos decididos)</span><b>${pct(aceitos.length)}</b></div>
+      </div>
+      <div class="rl-grade">
+        <section class="card rl-graf rl-largo"><h2>Chamados ${nomeEscala}</h2>${colunas}</section>
+        <section class="card rl-graf"><h2>Lojas que mais abrem chamados</h2>${barras(topLojas, { acao: 'rl-loja', vazio: 'Sem lojas no período.' })}</section>
+        <section class="card rl-graf"><h2>Produtos que mais dão problema</h2>${barras(topProd, { acao: 'rl-prod', vazio: 'Nenhum produto informado nos chamados filtrados.' })}</section>
+        <section class="card rl-graf"><h2>Motivos dos produtos</h2>${barras(motivos, { acao: 'rl-motivo', vazio: 'Nenhum produto informado nos chamados filtrados.' })}</section>
+        <section class="card rl-graf"><h2>Decisão sobre os produtos</h2>${decisaoBarra}</section>
+      </div>
+      <section class="card rl-graf" style="margin-top:16px">
+        <h2>Produtos no período <span class="muted" style="font-weight:500">(${fmtNum(itens.length)})</span></h2>
+        <div class="rl-tabela-wrap"><table class="rl-tabela">
+          <thead><tr><th>Data</th><th>Protocolo</th><th>Loja</th><th>Código</th><th>Produto</th><th class="num">Qtd.</th><th>Motivo</th><th>Decisão</th></tr></thead>
+          <tbody>${itens.slice().reverse().slice(0, R.limite).map((i) => `<tr>
+            <td>${esc(new Date(i.chamado.criado_em).toLocaleDateString('pt-BR'))}</td><td class="mono">${esc(i.chamado.protocolo)}</td><td>${esc(i.chamado.loja_nome)}</td>
+            <td class="mono">${esc(i.sku || '—')}</td><td>${esc(i.produto || '—')}</td><td class="num">${esc(fmtQtd(i.quantidade, i.unidade) || '—')}</td>
+            <td>${esc(i.motivo || '—')}</td><td><span class="dec dec-${esc(i.decisao)}">${esc(decisaoTexto(i))}</span></td></tr>`).join('')}</tbody>
+        </table></div>
+        ${itens.length > R.limite ? `<div class="actions" style="margin-top:4px"><button class="btn small" type="button" id="rl-mais">Mostrar mais ${Math.min(50, itens.length - R.limite)}</button><span class="muted">Mostrando ${R.limite} de ${fmtNum(itens.length)}, dos mais recentes. A planilha traz todos.</span></div>` : ''}
+      </section>`;
+  }
+  // Toque numa barra: filtra por aquela loja, produto ou motivo.
+  $('rl-corpo').addEventListener('click', (e) => {
+    if (e.target.id === 'rl-mais') { R.limite += 50; renderRelatorio(true); return; }
+    const b = e.target.closest('[data-filtro]');
+    if (!b || !b.dataset.valor) return;
+    $(b.dataset.filtro).value = b.dataset.valor;
+    renderRelatorio();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  $('rl-ativos').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-limpar]');
+    if (!b) return;
+    $(b.dataset.limpar).value = '';
+    renderRelatorio();
+  });
+  // Dica flutuante dos gráficos (mouse, toque ou teclado).
+  const dica = document.createElement('div');
+  dica.className = 'rl-dica'; dica.hidden = true; dica.setAttribute('role', 'tooltip');
+  document.body.appendChild(dica);
+  function mostrarDica(el) {
+    dica.textContent = el.dataset.tip; dica.hidden = false;
+    const r = el.getBoundingClientRect(), w = dica.offsetWidth;
+    dica.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+    dica.style.top = Math.max(8, r.top - dica.offsetHeight - 8) + 'px';
+  }
+  ['mouseover', 'focusin'].forEach((ev) => $('rl-corpo').addEventListener(ev, (e) => { const el = e.target.closest('[data-tip]'); if (el) mostrarDica(el); }));
+  ['mouseout', 'focusout'].forEach((ev) => $('rl-corpo').addEventListener(ev, () => { dica.hidden = true; }));
+  window.addEventListener('scroll', () => { dica.hidden = true; }, { passive: true });
+
+  $('rl-csv').addEventListener('click', () => {
+    if (!R.carregado) return;
+    const { itens, chamados } = filtrarRelatorio();
+    const cel = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const num = (q) => q == null ? '' : String(Number(q)).replace('.', ',');
+    const cols = ['Data', 'Protocolo', 'Tipo', 'Status', 'Loja', 'Código', 'Produto', 'Quantidade', 'Unidade', 'Motivo do produto', 'Decisão', 'Qtd. aceita', 'Justificativa'];
+    const linhas = itens.map((i) => [new Date(i.chamado.criado_em).toLocaleDateString('pt-BR'), i.chamado.protocolo, TIPOS[i.chamado.tipo]?.rot, STATUS[i.chamado.status], i.chamado.loja_nome,
+      i.sku, i.produto, num(i.quantidade), i.quantidade != null ? (i.unidade || 'un') : '', i.motivo, DECISOES[i.decisao], num(i.qtd_aceita), i.justificativa]);
+    // Chamados sem produto também entram, para a planilha bater com o total de chamados.
+    chamados.filter((t) => !(t.itens || []).length).forEach((t) => linhas.push([new Date(t.criado_em).toLocaleDateString('pt-BR'), t.protocolo, TIPOS[t.tipo]?.rot, STATUS[t.status], t.loja_nome, '', '', '', '', t.motivo, '', '', '']));
+    const blob = new Blob(['﻿' + cols.map(cel).join(';') + '\n' + linhas.map((l) => l.map(cel).join(';')).join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `relatorio-sac-${$('rl-de').value}-a-${$('rl-ate').value}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   });
 
   // ---------- produtos ----------

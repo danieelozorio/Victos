@@ -41,6 +41,7 @@
     <div><b>Instale o app SAC Victos</b><span>Fica na tela do celular e abre direto no formulário.</span></div>
     <button class="btn primary small" type="button" id="instalar-sim">Instalar</button>
     <button class="btn small" type="button" id="instalar-nao" aria-label="Agora não">Agora não</button>
+    <p class="instalar-ajuda" id="instalar-ajuda" hidden></p>
   </div>
 
   <!-- Abrir chamado -->
@@ -580,24 +581,42 @@
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* site segue normal sem o app */ }); });
   }
-  // O Android avisa quando o app pode ser instalado; aí mostramos a faixa (a não ser que a pessoa tenha recusado há pouco).
+  // A faixa aparece a cada visita enquanto o app não estiver instalado ("Agora não" vale só para esta visita).
+  // Quando o navegador oferece a instalação, o botão instala direto; quando não oferece
+  // (iPhone, navegador do WhatsApp ou o Chrome segurando depois de uma recusa), ensina o caminho manual.
   let pedidoInstalar = null;
-  const recusouEm = Number(store.get('sac.instalarRecusado') || 0);
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    pedidoInstalar = e;
-    if (Date.now() - recusouEm > 7 * 864e5) $('instalar').hidden = false;
-  });
+  const instalado = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  const ua = navigator.userAgent || '';
+  const ehIphone = /iphone|ipad|ipod/i.test(ua);
+  const ehAndroid = /android/i.test(ua);
+  const dentroDeApp = /FBAN|FBAV|Instagram|WhatsApp|\bwv\b/i.test(ua);
+  function ajudaInstalar() {
+    if (dentroDeApp) return 'Este link abriu dentro de outro aplicativo, que não instala apps. Toque nos três pontinhos (⋮) e escolha "Abrir no Chrome" (ou "Abrir no navegador"). Lá, toque em Instalar.';
+    if (ehIphone) return 'No iPhone: abra este link no Safari, toque no botão Compartilhar (o quadrado com a seta para cima) e escolha "Adicionar à Tela de Início".';
+    return 'No Chrome: toque nos três pontinhos (⋮) no canto de cima e escolha "Instalar app" ou "Adicionar à tela inicial".';
+  }
+  function mostrarFaixa() {
+    if (instalado) return;
+    $('instalar-sim').textContent = pedidoInstalar ? 'Instalar' : 'Como instalar';
+    $('instalar').hidden = false;
+  }
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); pedidoInstalar = e; mostrarFaixa(); });
+  // Sem o aviso do navegador, a faixa aparece mesmo assim no celular, com o passo a passo.
+  if (ehAndroid || ehIphone) setTimeout(mostrarFaixa, 2500);
   $('instalar-sim').addEventListener('click', async () => {
-    if (!pedidoInstalar) return;
-    $('instalar').hidden = true;
-    pedidoInstalar.prompt();
-    const { outcome } = await pedidoInstalar.userChoice;
-    pedidoInstalar = null;
-    if (outcome === 'accepted') toast('App instalado! Procure o ícone SAC Victos na tela do celular.');
-    else store.set('sac.instalarRecusado', Date.now());
+    if (!pedidoInstalar) {
+      $('instalar-ajuda').textContent = ajudaInstalar();
+      $('instalar-ajuda').hidden = !$('instalar-ajuda').hidden;
+      return;
+    }
+    const pedido = pedidoInstalar;
+    pedidoInstalar = null; // cada aviso do navegador só pode ser usado uma vez
+    pedido.prompt();
+    const { outcome } = await pedido.userChoice;
+    if (outcome === 'accepted') { $('instalar').hidden = true; toast('App instalado! Procure o ícone SAC Victos na tela do celular.'); }
+    else { $('instalar-sim').textContent = 'Como instalar'; }
   });
-  $('instalar-nao').addEventListener('click', () => { $('instalar').hidden = true; store.set('sac.instalarRecusado', Date.now()); });
+  $('instalar-nao').addEventListener('click', () => { $('instalar').hidden = true; });
   window.addEventListener('appinstalled', () => { $('instalar').hidden = true; });
 })();
 </script>

@@ -6,5 +6,6 @@ window.SAC_CONFIG = {
   supabaseUrl: 'https://jetzcfiooluppuukryue.supabase.co',
   supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpldHpjZmlvb2x1cHB1dWtyeXVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1MDIxMzAsImV4cCI6MjEwODA3ODEzMH0.NsC8uL0aPUvsHCgpxgwFdOH2Mat7EJcOsNH-3kX-azk',
   empresa: 'Victos',    // nome que aparece no topo e nas mensagens de WhatsApp
-  whatsappSac: ''       // opcional: WhatsApp do SAC mostrado às lojas, ex.: '(11) 4000-1234'
+  whatsappSac: '',      // opcional: WhatsApp do SAC mostrado às lojas, ex.: '(11) 4000-1234'
+  boasVindasSempre: true // true: "Bem-vindo" toda vez que o app instalado abre; false: só na primeira vez
 };

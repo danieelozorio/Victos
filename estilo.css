@@ -433,3 +433,14 @@ div.f { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-
 @media (max-width: 900px) { .rl-campos { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rl-grade { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 620px) { .rl-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rl-barra { grid-template-columns: minmax(0, 1fr) auto; } .rl-barra .rl-trilho { grid-column: 1 / -1; grid-row: 2; } }
 .rl-tabela td.mono, .rl-tabela td:first-child { white-space: nowrap; }
+
+/* Faixa de instalar o app */
+.instalar { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 12px 14px; margin-bottom: 18px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.instalar img { border-radius: 10px; border: 1px solid var(--line); }
+.instalar div { display: flex; flex-direction: column; min-width: 0; }
+.instalar span { font-size: 13px; color: var(--muted); }
+@media (max-width: 620px) {
+  .instalar { display: flex; flex-wrap: wrap; }
+  .instalar div { flex: 1 1 calc(100% - 60px); }
+  .instalar .btn { flex: 1 1 40%; justify-content: center; padding-block: 10px; }
+}

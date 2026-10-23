@@ -53,6 +53,15 @@ A aba **Produtos** guarda o catálogo (código + nome). Cadastre um por um ou co
 
 **Ao atualizar o site com novidades no banco**, rode de novo o `supabase.sql` inteiro no SQL Editor. Ele só acrescenta o que falta e não apaga nenhum dado. Também existe um link geral, para quem ainda não foi cadastrado.
 
+## App no celular (Android)
+
+A página das lojas é um **app instalável**. No Android, ao abrir o site pelo Chrome, aparece a faixa **"Instale o app SAC Victos"**. Também dá pelo menu do Chrome (⋮), em **Instalar app** ou **Adicionar à tela inicial**. O ícone da Victos fica na tela do celular, e o app abre em tela cheia.
+
+- Quem instala a partir do link da loja continua com a loja identificada.
+- O app abre mesmo com internet fraca. Para enviar o chamado, precisa de conexão.
+- Quando o site é atualizado, o app atualiza sozinho.
+- No iPhone: abra no Safari, toque em Compartilhar e depois em **Adicionar à Tela de Início**.
+
 ## Como os dados ficam protegidos
 
 - A loja **não lê o banco**. Ela só abre chamados e consulta um chamado quando sabe o protocolo **e** o WhatsApp usado na abertura.

@@ -169,6 +169,21 @@
   </div>
 </footer>
 
+<div class="boas-vindas" id="boas-vindas" role="dialog" aria-modal="true" aria-labelledby="bv-tit" hidden>
+  <div class="bv-faixa" aria-hidden="true"></div>
+  <div class="bv-corpo">
+    <picture>
+      <source srcset="img/victos-logo-escuro.png" media="(prefers-color-scheme: dark)">
+      <img src="img/victos-logo.png" alt="Victos Alimentos e Logística" class="bv-logo" width="720" height="212">
+    </picture>
+    <h1 id="bv-tit">Bem-vindo!</h1>
+    <p class="bv-loja" id="bv-loja" hidden></p>
+    <p class="bv-txt">Este é o app do SAC da Victos. Por aqui você abre reclamações, devoluções e avarias, manda fotos e vídeos e acompanha a resposta da nossa equipe.</p>
+    <button class="btn primary bv-btn" type="button" id="bv-ok">Abrir chamado</button>
+    <span class="bv-grupo">Uma empresa do <img src="img/unisuper-logo.png" alt="Grupo UniSuper" width="153" height="80"></span>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -309,6 +324,7 @@
   let lojaFixa = null;
   function mostrarLojaFixa(l) {
     lojaFixa = l;
+    if (l) { $('bv-loja').textContent = l.nome; $('bv-loja').hidden = false; }
     $('loja-fixa').hidden = !l;
     document.querySelectorAll('#form .manual').forEach((el) => { el.hidden = !!l; });
     if (!l) return;
@@ -586,6 +602,23 @@
   // (iPhone, navegador do WhatsApp ou o Chrome segurando depois de uma recusa), ensina o caminho manual.
   let pedidoInstalar = null;
   const instalado = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+
+  // Boas-vindas ao abrir o app instalado: toda vez (boasVindasSempre no config.js) ou só na primeira
+  // (vale também para quem instalou antes desta versão). Para ver no navegador, abra com #boas-vindas no fim do endereço.
+  const verBoasVindas = (instalado && (cfg.boasVindasSempre || !store.get('sac.boasVindasVista'))) || location.hash === '#boas-vindas';
+  if (verBoasVindas) {
+    const salvoBV = store.get('sac.loja');
+    if (!lojaFixa && salvoBV && salvoBV.nome) { $('bv-loja').textContent = salvoBV.nome; $('bv-loja').hidden = false; }
+    $('boas-vindas').hidden = false;
+    document.body.classList.add('sem-rolagem');
+    $('bv-ok').focus();
+  }
+  $('bv-ok').addEventListener('click', () => {
+    store.set('sac.boasVindasVista', Date.now());
+    $('boas-vindas').classList.add('saindo');
+    setTimeout(() => { $('boas-vindas').hidden = true; document.body.classList.remove('sem-rolagem'); }, 250);
+    if (location.hash === '#boas-vindas') { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ok */ } }
+  });
   const ua = navigator.userAgent || '';
   const ehIphone = /iphone|ipad|ipod/i.test(ua);
   const ehAndroid = /android/i.test(ua);
